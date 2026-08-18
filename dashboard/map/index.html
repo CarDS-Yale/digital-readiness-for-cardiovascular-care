@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>A U.S. Census Tract Atlas: Cardiology Workforce, Disease Burden, and Digital Readiness · CarDS Lab</title>
+  <meta name="description" content="Interactive US dashboard of cardiology workforce, cardiovascular disease burden, and digital determinants of health at county and census tract level." />
+
+  <!-- MapLibre GL JS (vendored locally; free, OSS) -->
+  <link rel="stylesheet" href="maplibre-gl.css" />
+  <script src="maplibre-gl.js"></script>
+
+  <link rel="icon" href="../favicon.ico">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ─── Top bar ─────────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark"></div>
+    <div class="title-block">
+      <h1 class="title">A U.S. Census Tract Atlas:<br>Cardiology Workforce, Disease Burden, and Digital Readiness</h1>
+      <p class="title-desc">This atlas maps the supply of cardiologists, the burden
+        of cardiovascular disease, and the digital readiness of every US county
+        and census tract. Pick a view to color the counties, then search or
+        click any county to see its individual tracts and their priority
+        classification. Blue marks deployment priority and red marks investment
+        priority.
+        <span class="companion">Companion view:
+        <a href="../decision-space/">the Implementation Decision Space</a>.</span></p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/>
+        </svg>
+      </span>
+      <input id="search-input" type="text" placeholder="Search county or FIPS…" autocomplete="off" spellcheck="false" />
+      <div id="search-results" hidden></div>
+    </div>
+    <button id="tour-btn"     class="icon-btn" title="Take the guided walkthrough">Tour</button>
+    <button id="about-btn"    class="icon-btn" title="About this dashboard">About</button>
+    <a id="home-btn" class="icon-btn home-btn" href="../" title="Back to the intro page" aria-label="Home">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2.5 8 8 3l5.5 5"/><path d="M4 7.2V13h8V7.2"/>
+      </svg>
+    </a>
+  </div>
+</header>
+
+<!-- ─── Map views, broken into sections ─────────────────────────────────── -->
+<nav id="views-bar" aria-label="Map views">
+  <div class="vgroup">
+    <span class="vg-label">Digital divide</span>
+    <span class="seg">
+      <button data-m="mean_ddi_composite" class="on" title="Mean composite Digital Divide Index">Composite DDI</button>
+      <button data-m="mean_ddi_infa" title="Infrastructure / adoption sub-score">Infrastructure</button>
+      <button data-m="mean_ddi_se" title="Socioeconomic sub-score">Socioeconomic</button>
+    </span>
+  </div>
+  <div class="vgroup">
+    <span class="vg-label">Workforce</span>
+    <span class="seg">
+      <button data-m="cards_per_100k_latest" title="Cardiologists per 100,000 residents (2023)">Cardiologists</button>
+      <button data-m="card_app_per_100k" title="Cardiologists + cardiology NPs/PAs (DAC site-strict) per 100,000">+ NPs/PAs</button>
+      <button data-m="pcp_per_100k" title="Primary care MD/DO per 100,000 (2023)">PCPs</button>
+      <button data-m="workforce_trend" title="Trend in cardiologists per 100,000 residents, 2010–2023">Trend</button>
+    </span>
+  </div>
+  <div class="vgroup">
+    <span class="vg-label">Disease burden</span>
+    <span class="seg">
+      <button data-m="burden_z_last" title="Composite cardiometabolic z-score (2023), as in the main analysis">Composite z</button>
+      <button data-m="burden_trend" title="Burden trend 2022–2023">Trend</button>
+    </span>
+    <select id="disease-select" aria-label="Single disease or risk factor">
+      <option value="">Single disease…</option>
+      <optgroup label="Conditions">
+        <option value="disease_chd">Coronary heart disease</option>
+        <option value="disease_stroke">Stroke</option>
+        <option value="disease_diabetes">Diabetes</option>
+        <option value="disease_htn">Hypertension</option>
+        <option value="disease_chol">High cholesterol</option>
+      </optgroup>
+      <optgroup label="Risk factors">
+        <option value="disease_obesity">Obesity</option>
+        <option value="disease_smoking">Current smoking</option>
+        <option value="disease_inactivity">Physical inactivity</option>
+        <option value="disease_sleep">Short sleep</option>
+        <option value="disease_binge">Binge drinking</option>
+      </optgroup>
+    </select>
+  </div>
+</nav>
+
+<!-- ─── KPI strip ───────────────────────────────────────────────────────── -->
+<section id="kpi-bar" class="kpi-bar" aria-label="National prioritization summary">
+  <div class="kpi-lead">
+    <span class="kpi-lead-title">Digital Health Prioritization</span>
+    <span class="kpi-lead-sub">Workforce-constrained US communities, split into deployment-priority vs investment-priority</span>
+  </div>
+  <div id="kpi-cards" class="kpi-cards"><!-- filled by app.js from priority_summary.json --></div>
+</section>
+
+<!-- ─── Main: map + side panel ──────────────────────────────────────────── -->
+<main class="layout">
+  <p class="sr-only">Interactive map of United States counties. Counties are
+    colored by the view chosen in the toolbar. Keyboard users: use the search
+    box to open any county; its detail panel includes a table of every census
+    tract, and each row opens that tract's full profile.</p>
+  <div id="map" role="application"
+       aria-label="US county map, colored by the selected view. Use the search box for keyboard access."></div>
+
+  <!-- Legend overlay (bottom-left of map) -->
+  <div id="legend" class="legend"></div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" role="status" aria-live="polite">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading dashboard data…</div>
+  </div>
+
+  <!-- Tract-load status (top-right of map area) -->
+  <div id="tract-status" class="tract-status" role="status" aria-live="polite" hidden></div>
+
+  <!-- Side panel (slides in from right) -->
+  <aside id="side-panel" class="side-panel" aria-hidden="true">
+    <button class="panel-close" id="panel-close" aria-label="Close">&times;</button>
+    <div id="panel-content" class="panel-content"></div>
+  </aside>
+
+  <!-- About panel -->
+  <aside id="about-panel" class="about-panel" aria-hidden="true">
+    <button class="panel-close" id="about-close" aria-label="Close">&times;</button>
+    <div class="about-content">
+      <h2>About this dashboard</h2>
+      <p class="lede">
+        This dashboard maps three interlocking dimensions of US cardiovascular care at county and
+        census-tract resolution: the supply of cardiologists, the burden of cardiovascular disease in the
+        population, and the digital infrastructure that supports remote-care delivery.
+      </p>
+
+      <h3>Digital Health Prioritization (primary layer)</h3>
+      <p>
+        The default map answers a prioritization question: among US communities of greatest
+        cardiovascular need, which carry <strong>higher digital readiness</strong> and may be
+        positioned for digital health deployment, and which carry <strong>lower readiness</strong>
+        and may require infrastructure investment first?
+      </p>
+      <p>We first define a single <strong>workforce-constrained county pool</strong>, the union of:</p>
+      <pre class="eq">(a) counties with NO cardiologists in the latest panel year, and
+(b) counties with a DECLINING PER-CAPITA cardiology workforce
+    (OLS slope of cardiologists per 100,000 &lt; 0 over 2010-2023;
+     counties with mean &lt; 3 use the last-vs-first rate)</pre>
+      <p>Within that pool, at census-tract resolution, two anchored cuts form a
+        two-by-two matrix (the framing the manuscript uses):</p>
+      <pre class="eq">high burden : burden_z &gt; 0            (above the national-average tract)
+higher readiness : DDI ≤ national median (18.77)
+
+DEPLOYMENT PRIORITY = high burden AND higher readiness
+    → may be positioned for digital health deployment
+INVESTMENT PRIORITY = high burden AND lower readiness
+    → may require infrastructure investment first</pre>
+      <p>To rank tracts within each group, burden and DDI are standardized
+        within the pool and combined into a priority score: burden minus DDI
+        for deployment priority, burden plus DDI for investment priority.
+        These labels indicate relative priorities under the chosen thresholds.
+        They do not establish readiness for any specific intervention.</p>
+      <p>
+        Counties are shaded by their tract mix: <em>Deployment-lean</em>, <em>Investment-lean</em>,
+        or <em>Mixed</em> (containing both priority groups, the within-county heterogeneity that
+        county-level analysis hides). Zoom in or open a county to see its individual tracts.
+        The two groups are disjoint; every priority tract is either deployment-priority or
+        investment-priority, never both.
+      </p>
+      <p>
+        <strong>Kentucky and Pennsylvania.</strong> CDC suppressed nine of the ten
+        PLACES measures at the tract level in these two states, so their tract burden
+        composite rests on short sleep alone. Their tracts keep box membership and
+        count toward the national totals, but they are ineligible for the ranked
+        national top lists, and the burden map views show them as no data.
+      </p>
+
+      <h3>The burden composite</h3>
+      <p>
+        Cardiometabolic burden is a tract-level composite z score across 10
+        conditions and risk factors: hypertension, high cholesterol, coronary
+        heart disease, stroke, diabetes, obesity, current smoking, physical
+        inactivity, short sleep duration, and binge drinking. For each measure,
+        prevalence is averaged across the two most recent CDC PLACES releases
+        (2022 and 2023), standardized across tracts, and the resulting z scores
+        are averaged. The Trend view under Disease burden compares the two
+        releases directly.
+      </p>
+
+      <h3>Workforce measures</h3>
+      <p>
+        Cardiology workforce counts are county-level, non-federal cardiovascular
+        disease physicians from the Area Health Resources Files (2010 to 2023).
+        The priority-pool decline rule uses the trend in cardiologists
+        <strong>per 100,000 residents</strong>, as in the manuscript. The Trend
+        map view classifies counties by the trend in cardiologist counts;
+        counties averaging fewer than 3 cardiologists across the panel show as
+        "no cardiologists or too few to assess." The + NPs/PAs view adds
+        cardiology-affiliated nurse practitioners and physician assistants from
+        the CMS Doctors and Clinicians file. A clinician counts as
+        cardiology-affiliated when cardiologists make up at least half of the
+        physicians at the same practice site.
+      </p>
+
+      <h3>Data sources</h3>
+      <ul>
+        <li><strong>Cardiology workforce, 2010-2023.</strong> HRSA Area Health Resources Files; non-federal cardiovascular disease physicians.</li>
+        <li><strong>Cardiology NPs/PAs.</strong> CMS Doctors and Clinicians (DAC) national file, practice-site affiliation method.</li>
+        <li><strong>Primary care physicians, 2023.</strong> AHRF; patient-care MD/DO excluding residents.</li>
+        <li><strong>Disease burden.</strong> CDC PLACES, 2022 and 2023 releases; 10 cardiometabolic measures.</li>
+        <li><strong>Digital readiness.</strong> Purdue Digital Divide Index (2022-2024), built from American Community Survey and FCC data; infrastructure/adoption (INFA) and socioeconomic (SE) sub-scores. <em>Higher DDI = larger divide = lower readiness.</em></li>
+        <li><strong>Population and geography.</strong> ACS 2020-2024 five-year estimates; US Census Bureau cartographic boundaries.</li>
+      </ul>
+
+      <h3>Robustness</h3>
+      <p>
+        The manuscript tests the framework in eight sensitivity analyses:
+        readiness rebuilt from six ACS indicators (with and without FCC
+        broadband availability), the two DDI sub-scores used separately, the
+        matrix applied to all US tracts without the workforce screen, stricter
+        burden and readiness thresholds, a 25-mile geographic access credit,
+        the workforce broadened to cardiology-affiliated NPs/PAs, the pool
+        rebuilt on primary care physicians, and a KY/PA burden reconstruction
+        from the newest PLACES release. Classifications were broadly stable;
+        for example, a six-indicator readiness index placed tracts in the same
+        group about 93% of the time.
+      </p>
+
+      <h3>Display notes</h3>
+      <p>
+        The readiness tiers shown in county and tract panels are national
+        terciles of the tract-level DDI. They are a dashboard display aid, not
+        part of the manuscript classification.
+      </p>
+
+      <h3>Limitations</h3>
+      <ul>
+        <li>Workforce counts are <strong>county-level</strong> only; every tract inherits its county's workforce measures.</li>
+        <li>Tract-level PLACES reports <strong>crude prevalence</strong>, not age-adjusted.</li>
+        <li>Kentucky and Pennsylvania tract burden rests on one measure (short sleep); their tracts hold group membership but are not ranked.</li>
+        <li>The priority labels are relative to the chosen national thresholds. They do not certify any tract for a specific intervention.</li>
+      </ul>
+
+      <h3>Accessibility</h3>
+      <p>
+        Both dashboards were designed to meet WCAG 2.1 Level AA. All controls
+        work by keyboard; the search box and the tract table form the keyboard
+        path to any county or tract; and the palettes were checked under common
+        forms of colour vision deficiency.
+      </p>
+
+      <p class="cite">
+        CarDS Lab, Yale School of Medicine. A companion view, the
+        <a href="../decision-space/">implementation decision space</a>, plots
+        every workforce-constrained tract by burden and readiness.
+      </p>
+    </div>
+  </aside>
+</main>
+
+<footer class="footer">
+  <span>Data:
+    <a href="https://data.hrsa.gov/topics/health-workforce/ahrf" target="_blank" rel="noopener">AHRF (HRSA)</a> &middot;
+    <a href="https://www.cdc.gov/places/index.html" target="_blank" rel="noopener">CDC PLACES</a> &middot;
+    <a href="https://storymaps.arcgis.com/stories/8ad45c48ba5c43d8ad36240ff0ea0dc7" target="_blank" rel="noopener">Digital Divide Index (Purdue)</a>
+  </span>
+  <span class="footer-right">Built by
+    <a href="https://www.cards-lab.org/" target="_blank" rel="noopener">CarDS Lab</a>,
+    Yale School of Medicine</span>
+</footer>
+
+<script src="app.js"></script>
+<script src="../tour.js"></script>
+<script src="tour-steps.js"></script>
+</body>
+</html>
