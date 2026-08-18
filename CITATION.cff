@@ -1,0 +1,60 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using the metadata below.
+title: Digital Readiness for Cardiovascular Care
+abstract: >-
+  Analysis code linking cardiometabolic disease burden, cardiology workforce
+  supply and digital readiness at the census-tract level, and classifying
+  high-burden tracts in workforce-constrained counties into deployment-priority
+  and investment-priority groups. Includes the full pipeline from public source
+  files through the classification, ten sensitivity analyses, manuscript tables
+  and figures, and the source for two accompanying browser dashboards.
+type: software
+version: 1.0.0
+date-released: "2026-08-18"
+license: MIT
+repository-code: https://github.com/CarDS-Yale/digital-readiness-for-cardiovascular-care
+url: https://digital-readiness.cards-lab.org/
+keywords:
+  - cardiovascular disease
+  - digital health
+  - health equity
+  - telehealth
+  - cardiology workforce
+  - digital divide
+  - broadband access
+  - census tract
+  - geospatial analysis
+authors:
+  - family-names: Perera
+    given-names: Sudheesha
+    affiliation: >-
+      Section of Cardiovascular Medicine, Department of Internal Medicine, Yale
+      School of Medicine, New Haven, CT, USA; Cardiovascular Data Science (CarDS)
+      Lab, Yale School of Medicine, New Haven, CT, USA
+  - family-names: Dhingra
+    given-names: Lovedeep
+    affiliation: >-
+      Section of Cardiovascular Medicine, Department of Internal Medicine, Yale
+      School of Medicine, New Haven, CT, USA; Cardiovascular Data Science (CarDS)
+      Lab, Yale School of Medicine, New Haven, CT, USA
+  - family-names: Batinica
+    given-names: Bruno
+    affiliation: >-
+      Section of Cardiovascular Medicine, Department of Internal Medicine, Yale
+      School of Medicine, New Haven, CT, USA; Cardiovascular Data Science (CarDS)
+      Lab, Yale School of Medicine, New Haven, CT, USA
+  - family-names: Pedroso
+    given-names: Aline
+    affiliation: >-
+      Section of Cardiovascular Medicine, Department of Internal Medicine, Yale
+      School of Medicine, New Haven, CT, USA; Cardiovascular Data Science (CarDS)
+      Lab, Yale School of Medicine, New Haven, CT, USA
+  - family-names: Khera
+    given-names: Rohan
+    affiliation: >-
+      Section of Cardiovascular Medicine, Department of Internal Medicine, Yale
+      School of Medicine, New Haven, CT, USA; Cardiovascular Data Science (CarDS)
+      Lab, Yale School of Medicine, New Haven, CT, USA; Center for Outcomes
+      Research and Evaluation, Yale-New Haven Hospital, New Haven, CT, USA;
+      Section of Health Informatics, Department of Biostatistics, Yale School of
+      Public Health, New Haven, CT, USA
