@@ -18,7 +18,7 @@ and averages the resulting z scores, using the 2025 CDC PLACES census tract rele
 workforce screen uses the most recent year of county cardiologist counts in a 2010 to
 2023 panel.
 
-Ten sensitivity analyses ask whether the two groups survive reasonable changes to those
+Sensitivity analyses ask whether the two groups survive reasonable changes to those
 choices. Four of them vary how readiness is measured: rebuilding the index from raw ACS
 and FCC inputs, splitting it into its infrastructure and socioeconomic halves, and
 swapping the 2022 vintage for 2024. Three vary the workforce definition: primary care
