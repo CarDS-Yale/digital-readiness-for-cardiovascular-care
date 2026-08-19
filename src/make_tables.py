@@ -75,7 +75,7 @@ def main():
         out["DDI INFA"] = d["infa"].round(1)
         out["DDI SE"] = d["se"].round(1)
         out["Cardiologists per 100,000"] = d["card_per_100k_last"].round(2)
-        out["Burden z-score"] = d["burden_z"].round(2)
+        out["Burden z score"] = d["burden_z"].round(2)
         return out
     save("table_1A", primary_table(inv0e))
     save("table_1B", primary_table(dep0e))
@@ -93,9 +93,9 @@ def main():
                 for col_label, src, nd in extra:
                     out[col_label] = d[src].round(nd)
             out["DDI (composite)"] = d["ddi"].round(1)
-            out["Burden z-score"] = d["burden_z"].round(2)
+            out["Burden z score"] = d["burden_z"].round(2)
             if flag_pool:
-                out["In high-need pool"] = np.where(d["in_pool"].astype(bool), "Yes", "No")
+                out["In workforce-constrained pool"] = np.where(d["in_pool"].astype(bool), "Yes", "No")
             if flag_primary:
                 out["In primary top 25"] = np.where(
                     d["fips_tract"].isin(prim25[grp]), "Yes", "No")
@@ -178,9 +178,13 @@ def main():
             [["fips_county", "card_last", "pool_declining"]]
             .merge(app, left_on="fips_county", right_on="fips_st_cnty", how="left"))
     cnty["n_app_site_strict"] = cnty["n_app_site_strict"].fillna(0)
-    pool_g = set(cnty.loc[
+    # counties with no AHRF workforce record (the 9 Connecticut planning
+    # regions) cannot enter the pool, matching the primary definition;
+    # without this, missing counts read as zero supply
+    has_wf = cnty["card_last"].notna()
+    pool_g = set(cnty.loc[has_wf & (
         ((cnty["card_last"].fillna(0) + cnty["n_app_site_strict"]) == 0)
-        | cnty["pool_declining"].fillna(False), "fips_county"])
+        | cnty["pool_declining"].fillna(False)), "fips_county"])
     Pg = tracts[tracts["fips_county"].isin(pool_g)].copy()
     app_n = dict(zip(cnty["fips_county"], cnty["n_app_site_strict"].astype(int)))
     Pg["n_card_app"] = Pg["fips_county"].map(app_n).fillna(0).astype(int)

@@ -3,8 +3,8 @@ sens_burden_kypa.py
 ========================================
 Sensitivity check for the Kentucky / Pennsylvania burden gap.
 
-Our primary burden composite draws on the 2 most recent PLACES releases,
-in which KY and PA carry only 1 of the 10 CV measures (short sleep). This
+Our primary burden composite draws on the 2025 PLACES release, in which KY
+and PA carry only 1 of the 10 CV measures (short sleep). This
 script pulls the PLACES 2023 release, where KY and PA have full measures,
 rebuilds a composite z-score burden on that release, and asks whether the
 KY/PA target geographies (led by Delaware County PA) stay high burden.

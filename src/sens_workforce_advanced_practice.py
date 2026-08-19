@@ -72,11 +72,16 @@ def main():
           f"r={r_sanity:.3f}")
 
     rows, mixes = [], []
+    # counties with no AHRF workforce record (the 9 Connecticut planning
+    # regions) cannot enter the pool, matching the primary definition;
+    # without this, missing counts read as zero supply
+    has_wf = cnty["card_last"].notna()
     runs = {
-        "APPonly": set(cnty.loc[cnty["n_app_site_strict"] == 0, "fips_county"]),
-        "composite": set(cnty.loc[
+        "APPonly": set(cnty.loc[has_wf & (cnty["n_app_site_strict"] == 0),
+                                "fips_county"]),
+        "composite": set(cnty.loc[has_wf & (
             ((cnty["card_last"].fillna(0) + cnty["n_app_site_strict"]) == 0)
-            | cnty["pool_declining"].fillna(False), "fips_county"]),
+            | cnty["pool_declining"].fillna(False)), "fips_county"]),
     }
     card_pool = set(tracts.loc[tracts["in_pool"], "fips_county"])
     for name, pool_set in runs.items():

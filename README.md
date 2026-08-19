@@ -11,9 +11,10 @@ Resources Files, and digital readiness from the Purdue Digital Divide Index.
 - **Investment priority.** Higher burden, lower readiness. Infrastructure and adoption
   support are likely needed first.
 
-A tract counts as higher burden if its composite burden z-score is above the national
+A tract counts as higher burden if its composite burden z score is above the national
 mean, and as higher readiness if its Digital Divide Index falls at or below the national
-median. The composite averages age-adjusted prevalence across ten conditions, and the
+median. The composite standardizes the age-adjusted prevalence of ten conditions across tracts
+and averages the resulting z scores, using the 2025 CDC PLACES census tract release. The
 workforce screen uses the most recent year of county cardiologist counts in a 2010 to
 2023 panel.
 
@@ -25,7 +26,7 @@ supply instead of cardiology, a 25-mile cross-county access rule, and a pool tha
 cardiology NPs and PAs as coverage. The rest relax the sample and the cutoffs, including
 a run with no workforce screen at all and a 3 x 3 grid of alternative burden and
 readiness thresholds. Two more check the burden composite in Kentucky and Pennsylvania,
-where CDC suppressed 9 of the 10 measures in the releases used here. Each run reports box
+where CDC suppressed 9 of the 10 measures in the release used here. Each run reports box
 agreement, group retention, and top-N overlap against the primary result.
 
 ## Data Requirements
@@ -113,8 +114,10 @@ otherwise unconstrained, apart from the requirement that `build_master.py` be ru
 
 All outputs are written to `outputs/`, with one subdirectory per product. `master/`
 contains the cached master table and the sensitivity logs, `burden_workforce/` contains
-the burden composite, `tables/` contains the ranked lists, and `figure1/` through
-`figure4/` contain the manuscript figures.
+the burden composite and the county workforce summary, `tables/` contains the ranked
+lists, `table1/` contains the group characteristics table, and `figure1/` through
+`figure4/` contain the manuscript figures. The data acquisition scripts write their
+intermediate files to `outputs/` itself.
 
 ## Dashboards
 

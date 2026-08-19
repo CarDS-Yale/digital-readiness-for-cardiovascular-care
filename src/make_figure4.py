@@ -149,8 +149,9 @@ def main():
         fig.legend(handles=[
             Patch(facecolor=INV, label="Investment priority"),
             Patch(facecolor=DEP, label="Deployment priority"),
-            Patch(facecolor=tint(True, 0.7), label="Leans lower readiness"),
-            Patch(facecolor=tint(False, 0.7), label="Leans higher readiness"),
+            Patch(facecolor=tint(True, 0.7), label="Lower readiness"),
+            Patch(facecolor=tint(False, 0.7), label="Higher readiness"),
+            Patch(facecolor=NO_DATA, label="No data"),
             Line2D([0], [0], marker="o", ls="", mfc="black", mec="white",
                    ms=8, label="City center")],
             loc="lower center", ncol=3, frameon=False, fontsize=9,

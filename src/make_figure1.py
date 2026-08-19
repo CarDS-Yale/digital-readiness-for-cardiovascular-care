@@ -80,17 +80,17 @@ def figure1(tracts):
     wf["fips_st_cnty"] = wf["fips_st_cnty"].str.zfill(5)
     rate = dict(zip(wf["fips_st_cnty"], wf["card_per_100k_last"]))
     cap = float(np.nanpercentile(list(rate.values()), 97))
-    draw_choropleth(rate, "Cardiology workforce",
+    draw_choropleth(rate, "Cardiology Workforce",
                     GRAY_RED, Normalize(0, cap),
-                    f"Cardiologists per 100,000 residents (capped at {cap:.0f})",
+                    f"Cardiologists per 100,000 residents (capped at {cap:.1f})",
                     "figure1a_workforce.png", extend="max")
 
     cb = (tracts.dropna(subset=["burden_z"])
                 .groupby("fips_county")["burden_z"].mean())
     lim = float(np.nanpercentile(np.abs(cb.values), 98))
-    draw_choropleth(cb.to_dict(), "Cardiometabolic disease burden",
+    draw_choropleth(cb.to_dict(), "Cardiometabolic Disease Burden",
                     GRAY_RED, Normalize(-lim, lim),
-                    "Mean tract burden z-score (0 = national average)",
+                    "Mean tract burden z score (0 = national average)",
                     "figure1b_burden.png", extend="both")
 
     ddi = pd.read_excel(os.path.join(PD_, "DDI", "2022-2024 US DDI.xlsx"),
@@ -98,9 +98,9 @@ def figure1(tracts):
     ddi["FIPS_Cnty"] = ddi["FIPS_Cnty"].str.zfill(5)
     vmax = float(max(np.nanpercentile(ddi[c], 99) for c in ("DDI", "INFA", "SE")))
     for col, label, fname in [
-            ("DDI", "Digital Divide Index (composite)", "figure1c_ddi.png"),
-            ("INFA", "Infrastructure/adoption sub-score (INFA)", "figure1d_infrastructure.png"),
-            ("SE", "Socioeconomic sub-score (SE)", "figure1e_socioeconomic.png")]:
+            ("DDI", "Digital Divide Index (Composite)", "figure1c_ddi.png"),
+            ("INFA", "Infrastructure/Adoption Sub-Score (INFA)", "figure1d_infrastructure.png"),
+            ("SE", "Socioeconomic Sub-Score (SE)", "figure1e_socioeconomic.png")]:
         vals = dict(zip(ddi["FIPS_Cnty"], ddi[col]))
         draw_choropleth(vals, label, GRAY_RED, Normalize(0, vmax),
                         f"{col} score (higher = worse readiness; shared scale)",

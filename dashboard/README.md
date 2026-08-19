@@ -14,15 +14,23 @@ dashboard/
 │   ├── style.css
 │   ├── maplibre-gl.js            # MapLibre vendored locally (no CDN)
 │   └── maplibre-gl.css
-├── decision-space/               # Interactive Figure 1 scatter (D3)
+│   └── tour-steps.js             # Guided-tour copy for the map
+├── decision-space/               # Interactive Figure 2 scatter (D3)
 │   ├── index.html
-│   ├── d3.v7.min.js
+│   ├── d3.v7.min.js              # D3 vendored locally (no CDN)
+│   ├── tour-steps.js
+│   ├── README.md
 │   ├── prepare_decision_space_data.py
 │   └── data/decision_space.json
 ├── README.md                     # This file
+├── tour.js                       # Shared guided-tour engine
 ├── prepare_dashboard_data.py     # Generates the shared JSON files below
-├── prepare_priority_layers.py          # Adds the priority DEPLOY/INVEST targeting layer
+├── prepare_metric_extras.py      # Adds the derived metrics the map dropdown offers
+├── prepare_priority_layers.py    # Adds the deployment/investment priority layer
+├── prepare_state_lines.py        # State outlines drawn over the county layer
+├── prepare_fips_patches.py       # Re-keys three obsolete county FIPS codes
 ├── prepare_tract_geometries.py   # Optional: enables tract polygon overlay
+├── prepare_tract_geometries_fill.py  # Optional: fills gaps left by the previous step
 └── data/                         # Shared by both apps
     ├── counties.geojson          # ~5 MB – county shapes + analytic properties
     ├── county_data.json          # ~2 MB – county lookup keyed by FIPS
@@ -36,24 +44,24 @@ Both apps share one visual language: Arial, black text, white cards, and the
 blue/red scheme (deploy #1f5fa6, invest #c1272d). The map app reads shared
 data from `../data/`; the decision-space app carries its own compact file.
 
-## Primary layer – digital-health targeting (priority matrix)
+## Primary layer – digital-health priority matrix
 
 The default targeting view answers the manuscript's question. Among a single
-**high-need county pool** (counties with no cardiologists OR a declining
+**workforce-constrained county pool** (counties with no cardiologists OR a declining
 per-capita cardiology workforce), census tracts split by two anchored cuts
 (burden z > 0; DDI at or below the national median of 18.77) into:
 
-- **Deploy now** – high burden and ready → telecardiology and remote
-  monitoring can reach patients today (4,765 tracts).
-- **Invest first** – high burden and not ready → broadband, device, and
-  digital-literacy investment must come first (21,752 tracts).
+- **Deployment priority** – higher burden, higher readiness → telecardiology and
+  remote monitoring can plausibly reach patients now (4,765 tracts).
+- **Investment priority** – higher burden, lower readiness → broadband, device, and
+  digital-literacy investment are likely needed first (21,752 tracts).
 
-Counties are shaded **Deploy-lean**, **Invest-lean**, or **Mixed** (both target
-types within one county). KPI cards across the top show the national totals
+Counties are shaded **deployment-leaning**, **investment-leaning**, or **mixed** (both
+groups within one county). KPI cards across the top show the national totals
 (2,582 pool counties). The layer is reproduced from
 `outputs/master/` by `prepare_priority_layers.py` and matches
 `build_master.py` and the manuscript exactly. The two boxes are
-disjoint; no tract is both a deployment and an investment target.
+disjoint; no tract is in both groups.
 
 ## How to test locally
 
@@ -94,7 +102,7 @@ gzip is on.
 
 - Albers-projection US choropleth, pure GeoJSON (no basemap tiles)
 - Smooth MapLibre GL zoom and pan
-- Counties colored by quadrant by default; switch via the top-right dropdown to:
+- Counties colored by priority group by default; switch via the top-right dropdown to:
   composite risk score · mean DDI · workforce trend · burden trend
 - Hover: county border highlights
 - Click: zoom into the county AND open a detail panel on the right
@@ -104,15 +112,15 @@ gzip is on.
 - County name, state, CBSA, rural-urban code, population (latest year)
 - Cardiology workforce: latest count, per-100k rate, share aged ≥55,
   workforce trend label, slope, percent change over the panel
-- Disease burden: trend label, composite z-scores (first/last/delta)
-- Digital readiness: county-mean DDI composite + INFA + SE sub-scores, tier
+- Disease burden: trend label, composite z scores (first/last/delta)
+- Digital readiness: county-mean DDI composite + INFA + SE subscores, tier
 - Composite risk score (rank percentile)
 - **Sortable table** of every census tract in the county, with its DDI,
   burden z, quadrant, and tier. Click any tract row to drill in.
 
 **Side panel (tract view)** – after clicking a tract row
 
-- Tract burden trend with composite z-scores
+- Tract burden trend with composite z scores
 - Tract DDI composite + INFA + SE + readiness tier
 - The parent county's workforce trend (since AHRF is county-only)
 - A "← back to county" button to return
@@ -158,25 +166,34 @@ When the underlying pipeline outputs change (e.g., a new AHRF release):
 
 ```bash
 # 1. Re-run the upstream pipeline (writes to ../outputs/)
-python ../01_extract_ahrf_workforce.py
-python ../02_process_cdc_places.py
-python ../03_merge_and_trends.py
-python ../04_tract_ddi_profile.py
+cd ../src
+python build_burden_and_workforce.py
+python build_master.py
+python export_priority_lists.py
 
-# 2. Re-prep the dashboard data (base, extras, then the priority targeting layer)
+# 2. Re-prep the dashboard data, in this order
+cd ../dashboard
 python prepare_dashboard_data.py
+python prepare_metric_extras.py
 python prepare_priority_layers.py
+python prepare_state_lines.py
+python prepare_fips_patches.py          # must run after the three above
+python decision-space/prepare_decision_space_data.py
 
-# 3. Re-upload data/counties.geojson, county_data.json, tract_data.json, priority_summary.json
+# 3. Re-upload data/counties.geojson, county_data.json, tract_data.json,
+#    priority_summary.json and decision-space/data/decision_space.json
 ```
+
+If the source data itself changed, re-run the `fetch_*` scripts in `../src/` first.
 
 The HTML/CSS/JS doesn't need to change.
 
 ## Technical notes
 
 - **No third-party tile server.** The map is rendered entirely from your
-  GeoJSON; no Mapbox or Carto account needed. The only external resource
-  is the MapLibre GL JS library itself, served from the unpkg CDN.
+  GeoJSON; no Mapbox or Carto account needed.
+- **No external requests at all.** MapLibre GL JS and D3 are both vendored into
+  this folder, so the apps load nothing from a CDN.
 - **No tracking / analytics.** Pure static page; no cookies set by the app.
 - **Accessibility.** All interactive controls have ARIA labels; keyboard
   focus works for the search box, dropdown, and panel-close buttons.
@@ -188,9 +205,9 @@ The HTML/CSS/JS doesn't need to change.
 | | Hex | Use |
 |---|---|---|
 | Yale blue | `#00356B` | Accent, headings, links, primary buttons |
-| Q1 high-risk | `#BD2031` | Quadrant Q1 |
+| Investment priority / high risk | `#c1272d` | Priority group, quadrant Q1 |
 | Q2 recovering | `#DD7E3A` | Quadrant Q2 |
-| Q3 low-risk | `#2C6E49` | Quadrant Q3 |
+| Deployment priority / low risk | `#1f5fa6` | Priority group, quadrant Q3 |
 | Q4 watch | `#C9A227` | Quadrant Q4 |
 | Unclassified | `#D7DADD` | Counties with insufficient workforce data |
 

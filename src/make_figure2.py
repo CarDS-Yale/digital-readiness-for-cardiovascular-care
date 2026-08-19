@@ -79,12 +79,12 @@ def main():
            fontsize=9.5, va="top", weight="bold")
     a.text((nat + XMAX) / 2, 4.10, "Investment priority", color=INV,
            ha="center", fontsize=9.5, va="top", weight="bold")
-    a.text(nat + 0.5, -1.06, f"national median DDI ({nat:.0f})",
-           color="#111111", fontsize=8, zorder=4.6,
-           bbox=dict(fc="white", ec="none", alpha=0.9, pad=1.2))
+    a.text(nat + 0.6, -1.06, f"national median DDI ({nat:.1f})",
+           color="#111111", fontsize=8, zorder=30,
+           bbox=dict(fc="white", ec="none", alpha=1.0, pad=1.2))
     a.text(56, 0.08, "national-average burden (z = 0)", color="#111111",
-           fontsize=8, zorder=4.6,
-           bbox=dict(fc="white", ec="none", alpha=0.9, pad=1.2))
+           fontsize=8, zorder=30,
+           bbox=dict(fc="white", ec="none", alpha=1.0, pad=1.2))
     a.scatter(ni["ddi"], ni["burden_z"], s=110, marker="o", c=INV,
               edgecolors="white", linewidths=.7, label="Top 10 investment priority",
               zorder=5, alpha=.92)
@@ -93,7 +93,7 @@ def main():
               zorder=5, alpha=.92)
 
     a.set_xlabel("Digital Divide Index (higher = lower readiness \u2192)")
-    a.set_ylabel("Cardiometabolic burden (z-score, \u2191 = worse)")
+    a.set_ylabel("Cardiometabolic burden (z score, \u2191 = worse)")
     fig.tight_layout()
     fig.canvas.draw()
     ux = (a.transData.transform((1, 0)) - a.transData.transform((0, 0)))[0]
@@ -195,8 +195,8 @@ def main():
     stack_labels(nd, 1.0, "left", DEP)
     stack_labels(ni, 87.0, "right", INV)
 
-    a.legend(loc="lower center", bbox_to_anchor=(0.46, 0.02),
-             frameon=True, framealpha=0.9, edgecolor="none", fontsize=10)
+    a.legend(loc="lower right", bbox_to_anchor=(0.995, 0.02),
+             frameon=True, framealpha=0.95, edgecolor="none", fontsize=10)
     fig.savefig(os.path.join(OUT, "figure2_decision_space.png"), dpi=DPI)
     plt.close(fig)
     print(f"figure2_decision_space.png -> {OUT}")

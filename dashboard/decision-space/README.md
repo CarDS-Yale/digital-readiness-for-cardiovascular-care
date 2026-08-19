@@ -1,15 +1,16 @@
 # Implementation Decision Space (interactive)
 
-An interactive version of Figure 1 from the manuscript. Every tract in the
-high-need county pool is one point, plotted by Digital Divide Index (x) and
-cardiometabolic burden z-score (y). Blue points are deployment targets, red
-points are investment targets, and grey points are pool tracts outside both
-boxes. Hover a point to inspect it. Click it to open a full tract profile in
+An interactive version of Figure 2 from the manuscript. Every tract in the
+workforce-constrained county pool is one point, plotted by Digital Divide Index (x)
+and cardiometabolic burden z score (y). Blue points are deployment-priority tracts,
+red points are investment-priority tracts, and grey points are pool tracts outside
+both groups. Hover a point to inspect it. Click it to open a full tract profile in
 a sidebar. Click the legend chips to show or hide each group.
 
 The page uses the priority matrix framing from `build_master.py`: anchored
-cuts at burden z > 0 and the national median DDI (18.77), on the per-capita
-high-need pool (2,582 counties; 49,948 tracts; 4,765 deploy; 21,752 invest).
+cuts at burden z > 0 and the national median DDI (18.77, reported as 18.8 in the
+manuscript), on the workforce-constrained pool (2,582 counties; 49,948 tracts;
+4,765 deployment priority; 21,752 investment priority).
 
 ## Files
 
@@ -49,5 +50,5 @@ python3 prepare_decision_space_data.py
 The script reads `outputs/burden_workforce/`, `outputs/ahrf_workforce_trend_summary.csv`,
 `DDI/2022-2024 US DDI.xlsx`, `outputs/master/`, and
 `dashboard/data/{tract_data,county_data}.json` from the repo root. It rebuilds
-the priority pool, checks the boxes against the published priority CSVs, and writes
-`data/decision_space.json`.
+the workforce-constrained pool, checks the boxes against the ranked priority CSVs
+written by `export_priority_lists.py`, and writes `data/decision_space.json`.

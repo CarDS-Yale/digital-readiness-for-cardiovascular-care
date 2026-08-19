@@ -1,7 +1,17 @@
-.DS_Store
+# data (see data/README.md for sources)
+AHRF/
+CDC Places/
+DDI/
+ACS/
+FCC/
+DAC_CMS/
+GEO/
+tract_geo/
+outputs/
+dashboard/data/
+geojson-counties-fips.json
+
 __pycache__/
 *.pyc
 .venv/
-outputs/
-tract_geo/
-dashboard/data/
+.DS_Store

@@ -41,12 +41,23 @@ def albers(lon, lat, lat1, lat2, lat0, lon0):
     return rho * np.sin(th), rho0 - rho * np.cos(th)
 
 
+# The county boundary base carries pre-2015 FIPS codes whose analytic data
+# lives under a successor code, so those polygons would otherwise draw as
+# "missing". Same aliases the dashboards apply in prepare_fips_patches.py.
+FIPS_ALIASES = {
+    "46113": "46102",   # Shannon County, SD -> Oglala Lakota County (renamed 2015)
+    "02270": "02158",   # Wade Hampton, AK   -> Kusilvak Census Area (renamed 2015)
+    "51515": "51019",   # Bedford city, VA   -> merged into Bedford County (2013)
+}
+
+
 def county_polys():
     """fips -> list of rings [[x,y],...] in lon/lat, dateline-wrapped."""
     gj = json.load(open(os.path.join(PD_, "geojson-counties-fips.json")))
     out = {}
     for ft in gj["features"]:
         fips = str(ft.get("id", "")).zfill(5)
+        fips = FIPS_ALIASES.get(fips, fips)
         g = ft["geometry"]
         polys = [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
         rings = []
@@ -54,7 +65,7 @@ def county_polys():
             r = np.asarray(poly[0], dtype=float)
             r[:, 0] = np.where(r[:, 0] > 0, r[:, 0] - 360, r[:, 0])  # Aleutians
             rings.append(r)
-        out[fips] = rings
+        out.setdefault(fips, []).extend(rings)   # merge, for the 2013 merger
     return out
 
 
