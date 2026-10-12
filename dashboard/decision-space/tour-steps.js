@@ -18,13 +18,23 @@
         || window.__ds.find(t => t.bucket === 1);
   }
 
+  function resetAll() {
+    const ds = window.__ds;
+    if (!ds) return;
+    ds.deselect();
+    ds.openThresholds(false);
+    ds.openList(false);
+    ds.clearScope(false);
+    ds.resetThresholds();
+  }
+
   const steps = [
     {
       place: "center",
       title: "Welcome to the decision space",
       html: `Every dot is one census tract from the workforce-constrained county pool,
         placed by digital readiness and disease burden. This tour takes about
-        two minutes; the chart drives itself and you click <b>Next</b>.
+        three minutes; the chart drives itself and you click <b>Next</b>.
         Press <b>Esc</b> anytime to exit.`,
     },
     {
@@ -37,17 +47,18 @@
         ${sw("#1f5fa6")}blue dots left of the median are <b>deployment-priority
         tracts</b> (higher readiness) and ${sw("#c1272d")}red dots to the right
         are <b>investment-priority tracts</b> (lower readiness).
-        ${sw("#b7bcc3")}Grey dots are pool tracts outside both boxes.
+        ${sw("#b7bcc3")}Grey dots are pool tracts outside both groups.
         Kentucky and Pennsylvania are not plotted; their burden score rests
         on short sleep alone.`,
     },
     {
       target: "#kpis",
       title: "The headline numbers",
-      html: `The manuscript totals: <b>49,948</b> workforce-constrained tracts, split into
+      html: `The study totals: <b>49,948</b> workforce-constrained tracts, split into
         ${sw("#1f5fa6")}<b>4,765</b> deployment-priority tracts and
-        ${sw("#c1272d")}<b>21,752</b> investment-priority tracts, against a national
-        median DDI of <b>18.8</b>.`,
+        ${sw("#c1272d")}<b>21,752</b> investment-priority tracts across
+        <b>2,526</b> counties. These cards follow whatever thresholds and
+        view you set.`,
     },
     {
       target: "#legend",
@@ -64,7 +75,7 @@
         await sleep(400);
       },
       html: `Point at any dot and it grows, with a mini profile: the tract,
-        its county, its DDI and burden values, and its national rank. We are
+        its county, its DDI and burden values, and its rank. We are
         hovering a high-ranked investment-priority tract right now.`,
     },
     {
@@ -81,29 +92,64 @@
         with the ✕, the <b>Esc</b> key, or a click on empty space.`,
     },
     {
-      target: "#hl",
-      title: "Highlight the leading tracts",
+      target: "#thr-panel",
+      title: "Set the thresholds",
       before: async () => {
         await ready();
         window.__ds.deselect();
-        window.__ds.clickSeg(10);
+        window.__ds.openThresholds(true);
+        await sleep(250);
+        window.__ds.setPreset("p75", "quart");
         await sleep(450);
       },
-      html: `This control spotlights the highest-ranked tracts. We turned on the
-        <b>top 10</b>: the field fades and the ten leading deployment-priority
-        and investment-priority tracts pop. Try 50 or 100 for a wider cut, and use the
-        ${sw("#1f5fa6")}Deployment / ${sw("#c1272d")}Investment switches to show
-        either group alone.`,
+      html: `The study anchors the cuts at the national mean burden and the
+        national median DDI. Here you can move them. We just chose the
+        <b>top 25%</b> of burden and a <b>quartile split</b> of readiness:
+        the dashed lines moved, the counts changed, and the grey band in the
+        middle now belongs to neither group. The presets match the
+        manuscript's threshold analysis; the sliders take any value.`,
     },
     {
-      target: "#chart",
-      title: "Back to the full picture",
+      target: ".search-wrap",
+      title: "Restrict the view",
       before: async () => {
-        window.__ds.clickSeg(0);
+        await ready();
+        window.__ds.openThresholds(false);
+        window.__ds.resetThresholds();
+        window.__ds.setScope("state", "IL");
+        await sleep(450);
+      },
+      html: `Type a state, county or metropolitan area here and pick it from
+        the list. We chose <b>Illinois</b>: its tracts stay in color, the rest
+        of the country fades, and the counts switch to the state. A metro
+        area such as "Chicago" or a county such as "Cook" works the same way.`,
+    },
+    {
+      target: "#list-panel",
+      title: "List the leading tracts",
+      before: async () => {
+        await ready();
+        window.__ds.openList(true);
+        window.__ds.setListN(10);
+        await sleep(450);
+      },
+      html: `This list ranks the tracts under your current thresholds and
+        view: here the ten leading deployment-priority tracts in Illinois,
+        spotlighted on the chart. Switch to investment priority, widen the
+        list to 25, 50 or 100, click a row for the full profile, or download
+        the list as a CSV with the settings recorded in its header.`,
+    },
+    {
+      target: "#settings-line",
+      title: "Back to the study view",
+      before: async () => {
+        await ready();
+        resetAll();
         await sleep(350);
       },
-      html: `Highlight off, every tract back in view. Explore freely: hover,
-        click, toggle. Nothing you do here changes the data.`,
+      html: `This line always states the thresholds and view in force, and
+        <b>Reset to study view</b> returns to the published settings.
+        Explore freely: nothing you do here changes the data.`,
     },
     {
       target: "#tour-btn",
@@ -118,10 +164,7 @@
     key: "decision-space",
     steps,
     onEnd: () => {
-      try {
-        window.__ds.deselect();
-        window.__ds.clickSeg(0);
-      } catch (e) {}
+      try { resetAll(); } catch (e) {}
     },
   });
 
@@ -130,9 +173,10 @@
   offer({
     key: "decision-space",
     title: "Take a quick tour?",
-    body: `New here? A two-minute walkthrough explains the axes and colors,
-      demos hover and click, and shows the leading-tract highlighter. The chart
-      drives itself; you just click Next.`,
+    body: `New here? A three-minute walkthrough explains the axes and colors,
+      demos hover and click, and shows how to set thresholds, restrict the
+      view and list the leading tracts. The chart drives itself; you just
+      click Next.`,
     onStart: () => tour.start(),
   });
 })();

@@ -15,7 +15,7 @@ dashboard/
 │   ├── maplibre-gl.js            # MapLibre vendored locally (no CDN)
 │   └── maplibre-gl.css
 │   └── tour-steps.js             # Guided-tour copy for the map
-├── decision-space/               # Interactive Figure 2 scatter (D3)
+├── decision-space/               # Implementation Decision Space (D3 scatter)
 │   ├── index.html
 │   ├── d3.v7.min.js              # D3 vendored locally (no CDN)
 │   ├── tour-steps.js
@@ -62,6 +62,26 @@ groups within one county). KPI cards across the top show the national totals
 `outputs/master/` by `prepare_priority_layers.py` and matches
 `build_master.py` and the manuscript exactly. The two boxes are
 disjoint; no tract is in both groups.
+
+## Implementation Decision Space
+
+The decision-space app (`decision-space/`) reproduces the burden-readiness
+matrix interactively. Beyond hover and click, it offers three controls that
+the manuscript describes:
+
+- **Thresholds.** Move the burden cut and the two readiness cuts (deployment
+  at or below the lower cut, investment above the upper cut). Presets match
+  the manuscript's threshold grid: burden above the mean, top quartile or top
+  decile, crossed with a median, quartile or decile split of the DDI. Counts,
+  colors and ranks follow the settings.
+- **View.** Search a state, county or metropolitan area to restrict the
+  view. Tracts outside it fade and every count and rank switches to the area.
+- **Leading tracts.** A docked list of the 10 to 100 highest-ranked tracts in
+  either group under the current thresholds and view, spotlighted on the
+  chart and downloadable as CSV.
+
+`decision-space/README.md` has the details, including how the page ranks
+tracts under thresholds other than the study defaults.
 
 ## How to test locally
 

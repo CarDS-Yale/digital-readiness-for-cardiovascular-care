@@ -80,9 +80,6 @@
   .kpi-lead { display: flex; flex-direction: column; }
   .kpi-lead-title { font-size: 13px; font-weight: 700; }
   .kpi-lead-sub { font-size: 11.5px; color: var(--ink-soft); }
-  #focus-chip { position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-    z-index: 6; display: none; }
-  #focus-chip.on { display: inline-flex; }
   .tour-btn {
     border: 1px solid var(--line); border-radius: 999px; background: var(--card);
     color: var(--ink); font: 700 12px Arial, sans-serif;
@@ -185,22 +182,109 @@
     }
   }
 
-  /* table view (accessible alternative to the canvas) */
-  #table-view {
-    position: absolute; inset: 0; z-index: 3; overflow: auto;
-    background: var(--bg); padding: 18px 28px 40px;
+  /* ── settings line (under the KPI bar) ──────────────────── */
+  #settings-line {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 6px 28px; background: #f7f8f9; border-bottom: 1px solid var(--line);
+    font-size: 12px; color: var(--ink-soft);
   }
-  #table-view h2 { font-size: 15px; margin: 18px 0 8px; letter-spacing: -0.01em; }
-  #table-view h2:first-child { margin-top: 0; }
-  #table-view .tv-note { font-size: 12px; color: var(--ink-soft); margin: 4px 0 10px; }
-  .tv-table { border-collapse: collapse; font-size: 12.5px; width: 100%; max-width: 880px; }
-  .tv-table th, .tv-table td { text-align: left; padding: 5px 12px 5px 0; border-bottom: 1px solid var(--line); }
-  .tv-table th { font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
-  .tv-table td.num, .tv-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .tv-table tr[tabindex] { cursor: pointer; }
-  .tv-table tr[tabindex]:hover { background: #f2f4f7; }
-  .tv-table tr[tabindex]:focus-visible { outline: 2px solid var(--deploy); outline-offset: -2px; }
+  #settings-line b { color: var(--ink); font-weight: 700; }
+  #settings-line .sep { color: var(--ink-mute); }
+  .link-btn {
+    border: none; background: none; padding: 0; cursor: pointer;
+    font: inherit; color: var(--deploy); text-decoration: underline;
+  }
+  .link-btn:hover { color: var(--yale); }
 
+  /* ── controls bar (top right of the stage) ──────────────── */
+  #controls {
+    position: absolute; top: 16px; right: 26px; z-index: 5;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ctl-btn {
+    border: 1px solid var(--line); border-radius: 999px;
+    background: rgba(255,255,255,.94); color: var(--ink);
+    font: 700 12px Arial, sans-serif; padding: 6px 14px; cursor: pointer;
+    box-shadow: 0 1px 6px rgba(0,0,0,.06); display: inline-flex; align-items: center; gap: 7px;
+    transition: box-shadow .15s ease, background .15s ease;
+  }
+  .ctl-btn:hover { box-shadow: 0 1px 8px rgba(0,0,0,.12); }
+  .ctl-btn[aria-expanded="true"], .ctl-btn[aria-pressed="true"] { background: #eef2f7; border-color: #c9d3e0; }
+  .ctl-btn .caret { font-size: 10px; color: var(--ink-mute); }
+  .ctl-btn .badge-n {
+    font-size: 11px; font-weight: 700; color: #fff; background: var(--yale);
+    border-radius: 999px; padding: 1px 7px;
+  }
+
+  /* ── thresholds panel ───────────────────────────────────── */
+  #thr-panel {
+    position: absolute; top: 54px; right: 26px; z-index: 7; width: 360px; max-width: 94vw;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 14px 16px 14px;
+  }
+  #thr-panel[hidden] { display: none; }
+  .thr-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .thr-title { font-size: 13px; font-weight: 700; }
+  .thr-sec { margin-top: 12px; }
+  .thr-sec .lab { font-size: 12px; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .thr-sec .lab .val { font-weight: 600; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .thr-sec .seg { margin-bottom: 8px; }
+  .thr-sec .seg button { padding: 4px 9px; font-size: 11.5px; }
+  .thr-note { font-size: 11.5px; color: var(--ink-soft); margin: 6px 0 0; line-height: 1.45; }
+  .rng { display: grid; grid-template-columns: 112px 1fr 54px; align-items: center; gap: 8px; margin-top: 5px; font-size: 12px; }
+  .rng .rl { color: var(--ink-soft); }
+  .rng .rv { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .rng.deploy .rl, .rng.deploy .rv { color: var(--deploy); }
+  .rng.invest .rl, .rng.invest .rv { color: var(--invest); }
+  input[type=range] { width: 100%; accent-color: var(--yale); margin: 0; }
+  input[type=range]:focus-visible { outline: 2px solid var(--deploy); outline-offset: 3px; }
+  .thr-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+  .thr-foot .ctl-btn { box-shadow: none; }
+  #csv-btn { white-space: nowrap; box-shadow: none; }
+
+  /* ── leading tracts list (docked left) ──────────────────── */
+  #list-panel {
+    position: absolute; top: 0; left: 0; bottom: 0; z-index: 4; width: 400px; max-width: 94vw;
+    background: var(--card); border-right: 1px solid var(--line);
+    box-shadow: 8px 0 32px rgba(0,0,0,.06);
+    transform: translateX(-102%);
+    transition: transform 240ms cubic-bezier(.4,0,.2,1), visibility 0s linear 260ms;
+    display: flex; flex-direction: column;
+  }
+  #list-panel.open { transform: translateX(0); visibility: visible;
+    transition: transform 240ms cubic-bezier(.4,0,.2,1), visibility 0s; }
+  #list-panel[aria-hidden="true"] { visibility: hidden; }
+  #list-head { flex: 0 0 auto; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
+  .list-title-row { display: flex; justify-content: space-between; align-items: center; }
+  .list-title { font-size: 14px; font-weight: 700; }
+  .list-sub { font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; }
+  .list-ctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .list-ctl .seg button { padding: 4px 10px; font-size: 11.5px; }
+  .seg button.on.deploy { color: var(--deploy); }
+  .seg button.on.invest { color: var(--invest); }
+  #list-body { flex: 1 1 auto; overflow-y: auto; padding: 4px 8px 20px 16px; }
+  .lt-table { border-collapse: collapse; font-size: 12.3px; width: 100%; }
+  .lt-table th, .lt-table td { text-align: left; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .lt-table th { font-size: 11px; font-weight: 700; color: var(--ink-soft); position: sticky; top: 0; background: var(--card); }
+  .lt-table td.num, .lt-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .lt-table td.rk { font-weight: 700; width: 34px; }
+  .lt-table .sub { display: block; font-size: 11px; color: var(--ink-mute); }
+  .lt-table tr[tabindex] { cursor: pointer; }
+  .lt-table tr[tabindex]:hover, .lt-table tr.hot { background: #f2f4f7; }
+  .lt-table tr[tabindex]:focus-visible { outline: 2px solid var(--deploy); outline-offset: -2px; }
+  .lt-empty { font-size: 12.5px; color: var(--ink-soft); padding: 14px 4px; }
+  #list-foot { flex: 0 0 auto; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-soft); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  #list-close {
+    border: none; background: none; font-size: 20px; line-height: 1;
+    color: var(--ink-mute); cursor: pointer; padding: 2px 8px; border-radius: 6px;
+  }
+  #list-close:hover { background: #f2f3f5; color: var(--ink); }
+  body.list-open #chart-wrap { left: 400px; }
+  body.list-open #legend { left: 476px; }
+  @media (max-width: 900px) {
+    body.list-open #chart-wrap { left: 0; }
+    body.list-open #legend { left: 76px; }
+  }
   /* tooltip */
   #tip {
     position: absolute; z-index: 8; pointer-events: none;
@@ -353,11 +437,6 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  @media (max-width: 760px) {
-    header { padding: 14px 16px 10px; }
-    .kpis { display: none; }
-    #legend { left: 60px; flex-wrap: wrap; }
-  }
 </style>
 </head>
 <body>
@@ -367,21 +446,20 @@
     <div class="h-title">Implementation Decision Space</div>
     <p class="h-sub">Each point is one census tract in the workforce-constrained
       county pool, placed by digital readiness (Digital Divide Index) and
-      cardiometabolic burden. Hover any dot to inspect it, click it for the
-      full profile, and search a county to spotlight its tracts.
+      cardiometabolic burden. Move the thresholds, restrict the view to a
+      state, county or metropolitan area, and list the leading tracts under
+      your settings. Hover any dot to inspect it; click it for the full profile.
       <span class="companion">Companion view:
       <a href="../map/">US Census Tract Atlas</a>.</span></p>
   </div>
   <div class="h-right">
     <div class="search-wrap">
-      <input id="search-input" type="text" placeholder="Search county or FIPS…"
-        autocomplete="off" spellcheck="false" aria-label="Search county or FIPS" />
+      <input id="search-input" type="text" placeholder="State, county, metro area or FIPS…"
+        autocomplete="off" spellcheck="false" aria-label="Restrict the view to a state, county or metropolitan area, or find a tract by FIPS" />
       <div id="search-results" hidden></div>
     </div>
     <div class="h-btns">
       <button id="tour-btn" class="tour-btn" title="Take the guided walkthrough">Tour</button>
-      <button id="table-btn" class="tour-btn" aria-pressed="false"
-        title="Switch between the chart and an accessible ranked table">View as table</button>
       <button id="about-btn" class="tour-btn" title="Methods, data sources, and limitations">About</button>
       <a id="home-btn" class="tour-btn home-btn" href="../" title="Back to the intro page" aria-label="Home">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor"
@@ -393,39 +471,113 @@
   </div>
 </header>
 
-<section id="kpi-bar" aria-label="National prioritization summary">
+<section id="kpi-bar" aria-label="Prioritization summary for the current view">
   <div class="kpi-lead">
     <span class="kpi-lead-title">Digital Health Prioritization</span>
-    <span class="kpi-lead-sub">Workforce-constrained US communities, split into
+    <span class="kpi-lead-sub" id="kpi-sub">Workforce-constrained US communities, split into
       deployment-priority vs investment-priority</span>
   </div>
   <div class="kpis" id="kpis"></div>
 </section>
+<div id="settings-line" aria-live="polite"></div>
 
 <div id="stage" role="main">
   <div id="legend"></div>
-  <div id="hl" class="idle">
-    <span class="hl-label">Highlight top</span>
-    <span class="seg" id="hl-seg">
-      <button data-n="0" class="on">Off</button>
-      <button data-n="10">10</button>
-      <button data-n="50">50</button>
-      <button data-n="100">100</button>
-    </span>
-    <label class="sw deploy"><input type="checkbox" id="hl-dep" checked><span class="track"></span><span class="sw-l">Deployment</span></label>
-    <label class="sw invest"><input type="checkbox" id="hl-inv" checked><span class="track"></span><span class="sw-l">Investment</span></label>
+  <div id="controls">
+    <button id="list-btn" class="ctl-btn" aria-pressed="false" aria-controls="list-panel"
+      title="List the leading tracts under the current settings">Leading tracts</button>
+    <button id="thr-btn" class="ctl-btn" aria-expanded="false" aria-controls="thr-panel"
+      title="Set the burden and readiness thresholds">Thresholds <span class="caret" aria-hidden="true">&#9662;</span></button>
   </div>
+
+  <div id="thr-panel" hidden role="region" aria-label="Threshold settings">
+    <div class="thr-head">
+      <span class="thr-title">Classification thresholds</span>
+      <button type="button" class="link-btn" id="thr-reset">Study defaults</button>
+    </div>
+    <p class="thr-note" style="margin-top:0">A tract is a priority tract when its
+      burden sits above the burden cut. It is deployment priority when its DDI
+      is at or below the deployment cut and investment priority when its DDI is
+      above the investment cut. Presets are national percentiles across all
+      analyzed tracts, as in the manuscript's threshold analysis.</p>
+
+    <div class="thr-sec">
+      <div class="lab"><span>Burden cut</span><span class="val" id="b-val"></span></div>
+      <span class="seg" id="b-seg" role="group" aria-label="Burden presets">
+        <button type="button" data-p="mean">National mean</button>
+        <button type="button" data-p="p75">Top 25%</button>
+        <button type="button" data-p="p90">Top 10%</button>
+      </span>
+      <div class="rng">
+        <span class="rl">Burden z &gt;</span>
+        <input type="range" id="b-rng" step="0.01" aria-label="Burden z cut">
+        <span class="rv" id="b-rv"></span>
+      </div>
+    </div>
+
+    <div class="thr-sec">
+      <div class="lab"><span>Readiness cuts</span><span class="val" id="r-val"></span></div>
+      <span class="seg" id="r-seg" role="group" aria-label="Readiness presets">
+        <button type="button" data-p="median">Median split</button>
+        <button type="button" data-p="quart">Quartile split</button>
+        <button type="button" data-p="dec">Decile split</button>
+      </span>
+      <div class="rng deploy">
+        <span class="rl">Deployment: DDI &le;</span>
+        <input type="range" id="rlo-rng" step="0.1" aria-label="Deployment readiness cut, DDI at or below">
+        <span class="rv" id="rlo-rv"></span>
+      </div>
+      <div class="rng invest">
+        <span class="rl">Investment: DDI &gt;</span>
+        <input type="range" id="rhi-rng" step="0.1" aria-label="Investment readiness cut, DDI above">
+        <span class="rv" id="rhi-rv"></span>
+      </div>
+      <p class="thr-note" id="r-note"></p>
+    </div>
+  </div>
+
   <div id="chart-wrap"><div id="chart">
     <p class="sr-only">Scatter plot of workforce-constrained census tracts by Digital
       Divide Index (x axis) and cardiometabolic burden z score (y axis). Blue
       dots are deployment-priority tracts, red dots investment-priority
       tracts, grey dots other pool tracts. For keyboard or screen-reader
-      access, use the View as table button in the header; each table row
-      opens the tract's full profile.</p>
+      access, open the Leading tracts list; each row opens the tract's full
+      profile.</p>
     <canvas id="cv" role="img"
-      aria-label="Burden and readiness decision space. Each dot is one census tract. Use the View as table button for an accessible version."></canvas>
+      aria-label="Burden and readiness decision space. Each dot is one census tract. Open the Leading tracts list for an accessible version."></canvas>
     <svg id="overlay"></svg>
   </div></div>
+
+  <aside id="list-panel" aria-hidden="true" aria-label="Leading tracts under the current settings">
+    <div id="list-head">
+      <div class="list-title-row">
+        <span class="list-title">Leading tracts</span>
+        <button id="list-close" aria-label="Close the leading tracts list">&times;</button>
+      </div>
+      <div class="list-sub" id="list-sub"></div>
+      <div class="list-ctl">
+        <span class="seg" id="list-grp" role="group" aria-label="Priority group">
+          <button type="button" data-g="1" class="on deploy">Deployment</button>
+          <button type="button" data-g="2" class="invest">Investment</button>
+        </span>
+        <span class="seg" id="list-n" role="group" aria-label="How many tracts to list">
+          <button type="button" data-n="10" class="on">10</button>
+          <button type="button" data-n="25">25</button>
+          <button type="button" data-n="50">50</button>
+          <button type="button" data-n="100">100</button>
+        </span>
+      </div>
+      <div class="list-ctl">
+        <label class="sw deploy"><input type="checkbox" id="hl-sw" checked><span class="track"></span><span class="sw-l" style="color:var(--ink)">Highlight on chart</span></label>
+      </div>
+    </div>
+    <div id="list-body"></div>
+    <div id="list-foot">
+      <span id="list-foot-note"></span>
+      <button type="button" class="ctl-btn" id="csv-btn" title="Download the listed tracts as CSV">Download CSV</button>
+    </div>
+  </aside>
+
   <aside id="about-panel" aria-hidden="true">
     <div id="about-head"><button id="about-close" aria-label="Close the About panel">&times;</button></div>
     <div id="about-body">
@@ -451,44 +603,61 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
         indicate relative priorities under the chosen thresholds. They do not
         establish readiness for any specific intervention.</p>
 
+      <h3>Setting your own thresholds</h3>
+      <p>The Thresholds control moves the cuts. The presets are the national
+        percentiles the manuscript's threshold analysis uses: burden above the
+        mean, in the top quartile or in the top decile, crossed with a median,
+        quartile or decile split of the DDI. A quartile or decile split leaves
+        a middle band of tracts in neither group. The priority scores are fixed,
+        so a stricter cut keeps the study ordering and drops the tracts that
+        miss it, while a looser cut admits tracts in their score order. The
+        counts in the header follow your settings and include Kentucky and
+        Pennsylvania.</p>
+
+      <h3>Restricting the view</h3>
+      <p>Search a state, county or metropolitan area to restrict the view.
+        Tracts outside the area fade, the counts switch to the area, and the
+        Leading tracts list ranks the area's tracts under the current cuts.
+        Metropolitan areas follow the 2023 core-based statistical area
+        definitions carried in the Area Health Resources Files.</p>
+
       <h3>The burden composite</h3>
       <p>Ten conditions and risk factors from CDC PLACES (hypertension, high
         cholesterol, coronary heart disease, stroke, diabetes, obesity,
-        smoking, physical inactivity, short sleep, binge drinking), averaged
-        across the 2022 and 2023 releases, standardized across tracts, and
-        averaged into one z score.</p>
+        smoking, physical inactivity, short sleep, binge drinking), from the
+        2025 census tract release, standardized across tracts and averaged
+        into one z score.</p>
 
       <h3>Kentucky and Pennsylvania</h3>
       <p>CDC suppressed nine of the ten measures at the tract level in these
         two states, so their burden score rests on short sleep alone. Their
-        tracts keep group membership and count toward the national totals,
+        tracts keep group membership and count toward the totals,
         but they are not plotted here and are excluded from the ranked
         lists.</p>
 
       <h3>Using the chart</h3>
       <p>Hover any dot for a mini profile; click it for the full tract panel.
-        The legend chips show or hide each group. The Highlight control
-        spotlights the 10, 50, or 100 leading tracts in each group. View as
-        table lists the same leading tracts as a ranked, keyboard-friendly
-        table.</p>
+        The legend chips show or hide each group. The Leading tracts list
+        shows the 10, 25, 50 or 100 highest-ranked tracts in each group under
+        the current thresholds and scope, spotlights them on the chart, and
+        downloads as a CSV.</p>
 
       <h3>Robustness</h3>
-      <p>The manuscript tests this framework in eight sensitivity analyses,
+      <p>The manuscript tests this framework in nine sensitivity analyses,
         spanning alternative readiness measures, workforce definitions,
-        thresholds, and a geographic access credit. Classifications were
-        broadly stable; a six-indicator readiness index placed tracts in the
-        same group about 93% of the time.</p>
+        thresholds, and a geographic access credit, and checks each input
+        against an independent source. Classifications were broadly stable;
+        a six-indicator readiness index placed tracts in the same group about
+        93% of the time.</p>
 
       <h3>Data sources and accessibility</h3>
-      <p>HRSA Area Health Resources Files (2010-2023), CDC PLACES (2022-2023
-        releases), and the Purdue Digital Divide Index (2022-2024, built from
+      <p>HRSA Area Health Resources Files (2010-2023), CDC PLACES (2025
+        release), and the Purdue Digital Divide Index (2022-2024, built from
         ACS and FCC data). Both dashboards were designed to meet WCAG 2.1
         Level AA. The companion <a href="../map/">county atlas</a> maps every
         view at county and tract level.</p>
     </div>
   </aside>
-  <button id="focus-chip" class="chip" aria-label="Clear the county focus"></button>
-  <div id="table-view" hidden aria-label="Ranked priority tracts as a table"></div>
   <div id="tip"></div>
 
   <aside id="panel" aria-hidden="true">
@@ -519,54 +688,231 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
     2: { base: "rgba(193,39,45,0.34)",  hot: "#c1272d", name: "Investment priority" },
     0: { base: "rgba(150,156,165,0.28)", hot: "#6b7280", name: "Not a priority tract" },
   };
+  const FADE = {                              // colors for the dimmed field
+    1: "rgba(31,95,166,0.10)",
+    2: "rgba(193,39,45,0.085)",
+    0: "rgba(150,156,165,0.085)",
+  };
+  const STATES = {
+    AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+    CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "District of Columbia",
+    FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+    IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+    ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota",
+    MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+    NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+    NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon",
+    PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota",
+    TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia",
+    WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+  };
 
   const resp = await fetch("data/decision_space.json");
   const data = await resp.json();
   const M = data.meta;
   const counties = data.counties.map(r => Object.fromEntries(data.countyCols.map((c, i) => [c, r[i]])));
   const tracts   = data.tracts.map(r => Object.fromEntries(data.tractCols.map((c, i) => [c, r[i]])));
-  tracts.forEach(t => t.county = counties[t.ci]);
+  tracts.forEach(t => { t.county = counties[t.ci]; t.hidden = !!t.hidden; });
+  const shown = tracts.filter(t => !t.hidden);       // KY/PA rows are never plotted
+  counties.forEach(c => { c.metro = c.cbsa && / Metro SA$/.test(c.cbsa) ? c.cbsa.replace(/ Metro SA$/, "") : ""; });
 
-  // KPI cards
-  document.getElementById("kpis").innerHTML = [
-    ["", fmtInt(M.nPoolTracts),  "Workforce-constrained tracts"],
-    ["deploy", fmtInt(M.nDeploy), "Deployment-priority tracts"],
-    ["invest", fmtInt(M.nInvest), "Investment-priority tracts"],
-    ["", M.natMedianDDI.toFixed(1), "National median DDI"],
-  ].map(([c, n, l]) => `<div class="kpi ${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+  // ── settings ────────────────────────────────────────────────────────
+  // bCut: burden z above which a tract is a priority tract.
+  // rLo / rHi: deployment priority at DDI <= rLo, investment at DDI > rHi.
+  const NAT = M.natMedianDDI;
+  const PRESET_B = { mean: 0, p75: M.burdenP75, p90: M.burdenP90 };
+  const PRESET_R = { median: [NAT, NAT], quart: [M.ddiP25, M.ddiP75], dec: [M.ddiP10, M.ddiP90] };
+  const S = {
+    bCut: 0, rLo: NAT, rHi: NAT,
+    scope: null,              // {kind, key, label}
+    listN: 10, listGroup: 1, hl: true, listOpen: false,
+  };
+  const isDefault = () => S.bCut === 0 && S.rLo === NAT && S.rHi === NAT;
+  const inScope = t => {
+    if (!S.scope) return true;
+    const c = t.county;
+    if (S.scope.kind === "state") return c.state === S.scope.key;
+    if (S.scope.kind === "county") return t.ci === S.scope.key;
+    return c.metro === S.scope.key;
+  };
 
-  // Legend chips (toggle groups)
+  // Reclassify every tract under the current cuts and rank each group.
+  // At the study defaults the stored bucket and rank are used as they are,
+  // so the page reproduces the published lists exactly.
+  let lists = { 1: [], 2: [] };
+  let view = { nTracts: 0, nDep: 0, nInv: 0, nCounties: 0, nShown: { 0: 0, 1: 0, 2: 0 } };
+  function classify() {
+    const def = isDefault();
+    for (const t of tracts) {
+      if (def) t.b = t.bucket;
+      else t.b = t.burdenZ > S.bCut ? (t.ddi <= S.rLo ? 1 : (t.ddi > S.rHi ? 2 : 0)) : 0;
+      t.sc = t.b === 1 ? t.zb - t.zr : t.b === 2 ? t.zb + t.zr : null;
+      t.rk = null; t.vr = null;
+    }
+    for (const b of [1, 2]) {
+      const arr = shown.filter(t => t.b === b);
+      if (def) arr.sort((p, q) => p.rank - q.rank);
+      else arr.sort((p, q) => q.sc - p.sc);
+      arr.forEach((t, i) => { t.rk = i + 1; });
+    }
+    computeView();
+  }
+  function computeView() {
+    const v = { nTracts: 0, nDep: 0, nInv: 0, nShown: { 0: 0, 1: 0, 2: 0 } };
+    const cset = new Set();
+    lists = { 1: [], 2: [] };
+    for (const t of tracts) {
+      t.vr = null;
+      if (!inScope(t)) continue;
+      v.nTracts++; cset.add(t.ci);
+      if (t.b === 1) v.nDep++; else if (t.b === 2) v.nInv++;
+      if (t.hidden) continue;
+      v.nShown[t.b]++;
+      if (t.b) lists[t.b].push(t);
+    }
+    for (const b of [1, 2]) {
+      lists[b].sort((p, q) => p.rk - q.rk);
+      lists[b].forEach((t, i) => { t.vr = i + 1; });
+    }
+    v.nCounties = cset.size;
+    view = v;
+  }
+
+  // ── KPI cards, legend, settings line ────────────────────────────────
+  const $kpis = document.getElementById("kpis");
+  const $kpiSub = document.getElementById("kpi-sub");
+  function renderKpis() {
+    const where = S.scope ? S.scope.label : "national";
+    $kpis.innerHTML = [
+      ["", fmtInt(view.nTracts), "Workforce-constrained tracts"],
+      ["deploy", fmtInt(view.nDep), "Deployment-priority tracts"],
+      ["invest", fmtInt(view.nInv), "Investment-priority tracts"],
+      ["", fmtInt(view.nCounties), S.scope ? "Counties in view" : "Workforce-constrained counties"],
+    ].map(([c, n, l]) => `<div class="kpi ${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+    $kpiSub.textContent = S.scope
+      ? `${S.scope.label}: workforce-constrained tracts under the current thresholds`
+      : (isDefault() ? "Workforce-constrained US communities, split into deployment-priority vs investment-priority"
+                     : "Workforce-constrained US communities under your thresholds");
+    $kpis.setAttribute("aria-label", `Counts for ${where}`);
+  }
+
   const visible = { 1: true, 2: true, 0: true };
   const legend = document.getElementById("legend");
-  legend.innerHTML = [
-    [1, "Deployment priority", M.nDeployShown ?? M.nDeploy],
-    [2, "Investment priority", M.nInvestShown ?? M.nInvest],
-    [0, "Other pool tracts", (M.nPlotted ?? M.nPoolTracts) - (M.nDeployShown ?? M.nDeploy) - (M.nInvestShown ?? M.nInvest)],
-  ].map(([b, l, n]) => `<button type="button" class="chip" data-b="${b}" aria-pressed="true">
-      <span class="dot" style="background:${COL[b].hot}"></span><b>${l}</b>
-      <span class="cnt">${fmtInt(n)}</span></button>`).join("");
-  legend.querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => {
-    const b = +ch.dataset.b;
-    visible[b] = !visible[b];
-    ch.classList.toggle("off", !visible[b]);
-    ch.setAttribute("aria-pressed", String(visible[b]));
-    base = null; rebuildQuadtree(); draw();
-  }));
+  function renderLegend() {
+    legend.innerHTML = [
+      [1, "Deployment priority", view.nShown[1]],
+      [2, "Investment priority", view.nShown[2]],
+      [0, "Other pool tracts", view.nShown[0]],
+    ].map(([b, l, n]) => `<button type="button" class="chip${visible[b] ? "" : " off"}" data-b="${b}" aria-pressed="${visible[b]}">
+        <span class="dot" style="background:${COL[b].hot}"></span><b>${l}</b>
+        <span class="cnt">${fmtInt(n)}</span></button>`).join("");
+    legend.querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => {
+      const b = +ch.dataset.b;
+      visible[b] = !visible[b];
+      ch.classList.toggle("off", !visible[b]);
+      ch.setAttribute("aria-pressed", String(visible[b]));
+      base = null; rebuildQuadtree(); draw();
+    }));
+  }
 
-  // Highlight top-N controls
-  let hlN = 0, hlDep = true, hlInv = true;
-  const hlBox = document.getElementById("hl");
-  const hlSeg = document.getElementById("hl-seg");
-  hlSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
-    hlN = +b.dataset.n;
-    if (hlN > 0) clearFocus(false);
-    hlSeg.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
-    hlBox.classList.toggle("idle", hlN === 0);
-    base = null; draw();
-  }));
-  document.getElementById("hl-dep").addEventListener("change", e => { hlDep = e.target.checked; base = null; draw(); });
-  document.getElementById("hl-inv").addEventListener("change", e => { hlInv = e.target.checked; base = null; draw(); });
-  function hlActive() { return hlN > 0 && (hlDep || hlInv); }
+  const $settings = document.getElementById("settings-line");
+  function burdenLabel() {
+    if (S.bCut === PRESET_B.mean) return `burden z &gt; 0 (national mean)`;
+    if (S.bCut === PRESET_B.p75) return `burden z &gt; ${S.bCut.toFixed(2)} (top 25%)`;
+    if (S.bCut === PRESET_B.p90) return `burden z &gt; ${S.bCut.toFixed(2)} (top 10%)`;
+    return `burden z &gt; ${S.bCut.toFixed(2)}`;
+  }
+  function readyLabel() {
+    const same = S.rLo === S.rHi;
+    const tag = (S.rLo === NAT && same) ? " (national median)"
+      : (S.rLo === M.ddiP25 && S.rHi === M.ddiP75) ? " (national quartiles)"
+      : (S.rLo === M.ddiP10 && S.rHi === M.ddiP90) ? " (national deciles)" : "";
+    return same ? `DDI &le; ${S.rLo.toFixed(1)} for deployment, above it for investment${tag}`
+                : `DDI &le; ${S.rLo.toFixed(1)} for deployment, &gt; ${S.rHi.toFixed(1)} for investment${tag}`;
+  }
+  function renderSettings() {
+    const parts = [`<span>Thresholds: <b>${burdenLabel()}</b> <span class="sep">·</span> <b>${readyLabel()}</b></span>`,
+                   `<span class="sep">·</span>`,
+                   `<span>View: <b>${S.scope ? esc(S.scope.label) : "all workforce-constrained tracts"}</b>${
+                     S.scope ? ` <button type="button" class="link-btn" id="clear-scope" aria-label="Clear the view restriction to ${esc(S.scope.label)}">clear</button>` : ""}</span>`];
+    if (!isDefault() || S.scope) parts.push(`<span class="sep">·</span><button type="button" class="link-btn" id="reset-all">Reset to study view</button>`);
+    $settings.innerHTML = parts.join(" ");
+    const r = document.getElementById("reset-all");
+    if (r) r.addEventListener("click", () => { resetThresholds(false); clearScope(false); refresh(); });
+    const cs = document.getElementById("clear-scope");
+    if (cs) cs.addEventListener("click", () => clearScope());
+  }
+
+  // one call after any change to the cuts or the scope
+  function refresh() {
+    classify();
+    renderKpis(); renderLegend(); renderSettings(); renderThrPanel();
+    base = null; rebuildQuadtree(); drawOverlay(); draw();
+    renderList();
+    if (selected) openPanel(selected);
+  }
+
+  // ── threshold controls ──────────────────────────────────────────────
+  const $thrBtn = document.getElementById("thr-btn");
+  const $thr = document.getElementById("thr-panel");
+  const $bRng = document.getElementById("b-rng");
+  const $rloRng = document.getElementById("rlo-rng");
+  const $rhiRng = document.getElementById("rhi-rng");
+  function openThr(open) {
+    $thr.hidden = !open;
+    $thrBtn.setAttribute("aria-expanded", String(open));
+    if (open) renderThrPanel();
+  }
+  $thrBtn.addEventListener("click", () => openThr($thr.hidden));
+  document.getElementById("thr-reset").addEventListener("click", () => { resetThresholds(false); refresh(); });
+  function resetThresholds(redraw = true) {
+    S.bCut = 0; S.rLo = NAT; S.rHi = NAT;
+    if (redraw) refresh();
+  }
+  document.getElementById("b-seg").addEventListener("click", ev => {
+    const b = ev.target.closest("button[data-p]"); if (!b) return;
+    S.bCut = PRESET_B[b.dataset.p]; refresh();
+  });
+  document.getElementById("r-seg").addEventListener("click", ev => {
+    const b = ev.target.closest("button[data-p]"); if (!b) return;
+    [S.rLo, S.rHi] = PRESET_R[b.dataset.p]; refresh();
+  });
+  // sliders: reclassify as they move, one frame at a time
+  let sliderRaf = false;
+  function onSlider() {
+    if (sliderRaf) return;
+    sliderRaf = true;
+    requestAnimationFrame(() => { sliderRaf = false; refresh(); });
+  }
+  $bRng.addEventListener("input", () => { S.bCut = +$bRng.value; onSlider(); });
+  $rloRng.addEventListener("input", () => {
+    S.rLo = +$rloRng.value; if (S.rHi < S.rLo) S.rHi = S.rLo; onSlider();
+  });
+  $rhiRng.addEventListener("input", () => {
+    S.rHi = +$rhiRng.value; if (S.rLo > S.rHi) S.rLo = S.rHi; onSlider();
+  });
+  function renderThrPanel() {
+    document.querySelectorAll("#b-seg button").forEach(b => b.classList.toggle("on", PRESET_B[b.dataset.p] === S.bCut));
+    document.querySelectorAll("#r-seg button").forEach(b => {
+      const [lo, hi] = PRESET_R[b.dataset.p];
+      b.classList.toggle("on", lo === S.rLo && hi === S.rHi);
+    });
+    $bRng.value = S.bCut; $rloRng.value = S.rLo; $rhiRng.value = S.rHi;
+    document.getElementById("b-rv").textContent = S.bCut.toFixed(2);
+    document.getElementById("rlo-rv").textContent = S.rLo.toFixed(1);
+    document.getElementById("rhi-rv").textContent = S.rHi.toFixed(1);
+    document.getElementById("b-val").textContent = `${fmtInt(view.nDep + view.nInv)} priority tracts${S.scope ? " in view" : ""}`;
+    document.getElementById("r-val").textContent = `${fmtInt(view.nDep)} deployment · ${fmtInt(view.nInv)} investment`;
+    const band = S.rHi > S.rLo;
+    document.getElementById("r-note").textContent = band
+      ? `Tracts with DDI between ${S.rLo.toFixed(1)} and ${S.rHi.toFixed(1)} fall in neither group.`
+      : `One cut: every high-burden tract is deployment or investment priority.`;
+  }
+  document.addEventListener("click", ev => {
+    if ($thr.hidden) return;
+    if (ev.target.closest("#thr-panel, #thr-btn")) return;
+    openThr(false);
+  });
 
   // ── scales, canvas, svg ─────────────────────────────────────────────
   const chart = document.getElementById("chart");
@@ -575,18 +921,21 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
   const svg = d3.select("#overlay");
   const MARGIN = { top: 46, right: 26, bottom: 52, left: 62 };
 
-  const xMax = Math.min(90, Math.ceil(d3.max(tracts, t => t.ddi) / 5) * 5);
-  const yMin = Math.floor(d3.min(tracts, t => t.burdenZ) * 2) / 2;
-  const yMax = Math.ceil(d3.max(tracts, t => t.burdenZ) * 2) / 2;
+  const xMax = Math.min(90, Math.ceil(d3.max(shown, t => t.ddi) / 5) * 5);
+  const yMin = Math.floor(d3.min(shown, t => t.burdenZ) * 2) / 2;
+  const yMax = Math.ceil(d3.max(shown, t => t.burdenZ) * 2) / 2;
   const x = d3.scaleLinear().domain([0, xMax]);
   const y = d3.scaleLinear().domain([yMin, yMax]);
+  $bRng.min = yMin; $bRng.max = yMax;
+  $rloRng.min = 0; $rloRng.max = xMax;
+  $rhiRng.min = 0; $rhiRng.max = xMax;
 
   let W = 0, H = 0, qt = null;
   let hovered = null, selected = null;
 
   function layout() {
-    // keep the sidebar clear of the highlight controls
-    panel.style.top = (hlBox.offsetTop + hlBox.offsetHeight + 10) + "px";
+    panel.style.top = (document.getElementById("controls").offsetTop
+                       + document.getElementById("controls").offsetHeight + 10) + "px";
     const r = chart.getBoundingClientRect();
     W = r.width; H = r.height;
     const dpr = window.devicePixelRatio || 1;
@@ -595,7 +944,7 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     x.range([MARGIN.left, W - MARGIN.right]);
     y.range([H - MARGIN.bottom, MARGIN.top]);
-    tracts.forEach(t => { t.px = x(t.ddi); t.py = y(t.burdenZ); });
+    shown.forEach(t => { t.px = x(t.ddi); t.py = y(t.burdenZ); });
     base = null;
     rebuildQuadtree();
     drawOverlay();
@@ -605,33 +954,54 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
   function rebuildQuadtree() {
     qt = d3.quadtree()
       .x(t => t.px).y(t => t.py)
-      .addAll(tracts.filter(t => visible[t.bucket]));
+      .addAll(shown.filter(t => visible[t.b]));
   }
 
   // ── static overlay: regions, thresholds, axes ───────────────────────
   function drawOverlay() {
     svg.selectAll("*").remove();
-    const xm = x(M.natMedianDDI), y0 = y(0), yTop = y.range()[1], xR = x.range()[1], xL = x.range()[0];
+    const xlo = x(S.rLo), xhi = x(S.rHi), y0 = y(S.bCut);
+    const yTop = y.range()[1], yBot = y.range()[0], xR = x.range()[1], xL = x.range()[0];
 
-    // quadrant washes (above burden 0 only)
+    // quadrant washes (above the burden cut only)
     svg.append("rect").attr("x", xL).attr("y", yTop)
-       .attr("width", Math.max(0, xm - xL)).attr("height", Math.max(0, y0 - yTop))
+       .attr("width", Math.max(0, xlo - xL)).attr("height", Math.max(0, y0 - yTop))
        .attr("fill", "rgba(31,95,166,0.045)");
-    svg.append("rect").attr("x", xm).attr("y", yTop)
-       .attr("width", Math.max(0, xR - xm)).attr("height", Math.max(0, y0 - yTop))
+    svg.append("rect").attr("x", xhi).attr("y", yTop)
+       .attr("width", Math.max(0, xR - xhi)).attr("height", Math.max(0, y0 - yTop))
        .attr("fill", "rgba(193,39,45,0.04)");
+    if (S.rHi > S.rLo) {                     // the band that belongs to neither group
+      svg.append("rect").attr("x", xlo).attr("y", yTop)
+         .attr("width", Math.max(0, xhi - xlo)).attr("height", Math.max(0, y0 - yTop))
+         .attr("fill", "rgba(150,156,165,0.07)");
+      if (xhi - xlo > 70)
+        svg.append("text").attr("class", "region-sub").attr("fill", "#6b7280")
+           .attr("x", (xlo + xhi) / 2).attr("y", yTop + 20).attr("text-anchor", "middle")
+           .text("neither group");
+    }
 
     // threshold lines
     svg.append("line").attr("class", "thresh-line")
-       .attr("x1", xm).attr("x2", xm).attr("y1", yTop).attr("y2", y.range()[0]);
+       .attr("x1", xlo).attr("x2", xlo).attr("y1", yTop).attr("y2", yBot);
+    if (S.rHi !== S.rLo)
+      svg.append("line").attr("class", "thresh-line")
+         .attr("x1", xhi).attr("x2", xhi).attr("y1", yTop).attr("y2", yBot);
     svg.append("line").attr("class", "thresh-line")
        .attr("x1", xL).attr("x2", xR).attr("y1", y0).attr("y2", y0);
+    const same = S.rHi === S.rLo;
     svg.append("text").attr("class", "thresh-note")
-       .attr("x", xm + 6).attr("y", y.range()[0] - 6)
-       .text(`national median DDI (${M.natMedianDDI.toFixed(1)})`);
+       .attr("x", (same ? xlo : xlo) + (same ? 6 : -6)).attr("y", yBot - 6)
+       .attr("text-anchor", same ? "start" : "end")
+       .text(same
+         ? (S.rLo === NAT ? `national median DDI (${NAT.toFixed(1)})` : `readiness cut (DDI ${S.rLo.toFixed(1)})`)
+         : `deployment cut (DDI ≤ ${S.rLo.toFixed(1)})`);
+    if (!same)
+      svg.append("text").attr("class", "thresh-note")
+         .attr("x", xhi + 6).attr("y", yBot - 6)
+         .text(`investment cut (DDI > ${S.rHi.toFixed(1)})`);
     svg.append("text").attr("class", "thresh-note")
        .attr("x", xR - 4).attr("y", y0 - 5).attr("text-anchor", "end")
-       .text("national-average burden (z = 0)");
+       .text(S.bCut === 0 ? "national-average burden (z = 0)" : `burden cut (z = ${S.bCut.toFixed(2)})`);
 
     // region labels
     const lg = svg.append("g");
@@ -646,7 +1016,7 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
 
     // axes
     svg.append("g").attr("class", "axis")
-       .attr("transform", `translate(0,${y.range()[0]})`)
+       .attr("transform", `translate(0,${yBot})`)
        .call(d3.axisBottom(x).ticks(8).tickSizeOuter(0));
     svg.append("g").attr("class", "axis")
        .attr("transform", `translate(${xL},0)`)
@@ -655,58 +1025,65 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
        .attr("x", (xL + xR) / 2).attr("y", H - 12).attr("text-anchor", "middle")
        .text("Digital Divide Index (higher = worse readiness →)");
     svg.append("text").attr("class", "axis-label")
-       .attr("transform", `translate(16,${(yTop + y.range()[0]) / 2}) rotate(-90)`)
+       .attr("transform", `translate(16,${(yTop + yBot) / 2}) rotate(-90)`)
        .attr("text-anchor", "middle")
        .text("Cardiometabolic burden (z-score, ↑ = worse)");
   }
 
   // ── point rendering ─────────────────────────────────────────────────
-  // The 50k base points render once to an offscreen buffer; hover and
-  // selection changes only blit the buffer and draw two rings on top.
+  // The base field renders once to an offscreen buffer; hover and selection
+  // only blit the buffer and draw rings on top.
   let base = null;
   const TAU = 6.2832;
-  const FADE = {                              // colors when highlight mode dims the field
-    1: "rgba(31,95,166,0.10)",
-    2: "rgba(193,39,45,0.085)",
-    0: "rgba(150,156,165,0.085)",
-  };
+  const hlActive = () => S.listOpen && S.hl;
   function renderBase() {
     const dpr = window.devicePixelRatio || 1;
     base = document.createElement("canvas");
     base.width = W * dpr; base.height = H * dpr;
     const bctx = base.getContext("2d");
     bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const R = 1.7, dim = hlActive() || FOCUS_CI != null;
+    const R = 1.7, hl = hlActive(), scoped = !!S.scope;
     for (const b of [0, 2, 1]) {              // grey under red under blue
       if (!visible[b]) continue;
-      bctx.fillStyle = dim ? FADE[b] : COL[b].base;
+      // out-of-scope dots, or the whole field when highlighting, go faint
+      bctx.fillStyle = (hl || scoped) ? FADE[b] : COL[b].base;
       bctx.beginPath();
-      for (const t of tracts) {
-        if (t.bucket !== b) continue;
+      for (const t of shown) {
+        if (t.b !== b) continue;
+        if (scoped && inScope(t)) continue;             // drawn below
         bctx.moveTo(t.px + R, t.py);
         bctx.arc(t.px, t.py, R, 0, TAU);
       }
       bctx.fill();
+      if (scoped && hl) {                     // in-scope context stays readable under the highlight
+        bctx.fillStyle = COL[b].base;
+        bctx.beginPath();
+        for (const t of shown) {
+          if (t.b !== b || !inScope(t)) continue;
+          bctx.moveTo(t.px + R, t.py);
+          bctx.arc(t.px, t.py, R, 0, TAU);
+        }
+        bctx.fill();
+      } else if (scoped) {                    // in-scope dots keep their color and grow a little
+        bctx.fillStyle = COL[b].hot;
+        for (const t of shown) {
+          if (t.b !== b || !inScope(t)) continue;
+          bctx.beginPath(); bctx.arc(t.px, t.py, 3.0, 0, TAU); bctx.fill();
+          bctx.beginPath(); bctx.strokeStyle = "#ffffff"; bctx.lineWidth = 1.0;
+          bctx.arc(t.px, t.py, 3.5, 0, TAU); bctx.stroke();
+        }
+      }
     }
-    if (hlActive()) {
-      for (const b of [2, 1]) {               // top-N targets pop above the faded field
-        if (!visible[b] || (b === 1 && !hlDep) || (b === 2 && !hlInv)) continue;
-        for (const t of tracts) {
-          if (t.bucket !== b || t.rank == null || t.rank > hlN) continue;
+    if (hl) {                                  // the listed tracts pop above the field
+      for (const b of [2, 1]) {
+        if (!visible[b]) continue;
+        for (const t of lists[b]) {
+          if (t.vr > S.listN) break;
           bctx.beginPath(); bctx.fillStyle = COL[b].hot;
           bctx.arc(t.px, t.py, 3.4, 0, TAU); bctx.fill();
           bctx.beginPath(); bctx.strokeStyle = "#ffffff"; bctx.lineWidth = 1.1;
           bctx.arc(t.px, t.py, 3.9, 0, TAU); bctx.stroke();
         }
-      }
-    }
-    if (FOCUS_CI != null) {                   // focused county pops above the faded field
-      for (const t of tracts) {
-        if (t.ci !== FOCUS_CI || !visible[t.bucket]) continue;
-        bctx.beginPath(); bctx.fillStyle = COL[t.bucket].hot;
-        bctx.arc(t.px, t.py, 3.2, 0, TAU); bctx.fill();
-        bctx.beginPath(); bctx.strokeStyle = "#ffffff"; bctx.lineWidth = 1.1;
-        bctx.arc(t.px, t.py, 3.7, 0, TAU); bctx.stroke();
       }
     }
   }
@@ -720,15 +1097,15 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
     for (const [t] of anims) {
       if (t === selected) continue;
       const r = curR(t);
-      if (r > 0.3 && visible[t.bucket]) ring(t, r);
+      if (r > 0.3 && visible[t.b]) ring(t, r);
     }
-    if (selected && visible[selected.bucket]) ring(selected, Math.max(curR(selected), HOVER_R));
+    if (selected && visible[selected.b]) ring(selected, Math.max(curR(selected), HOVER_R));
   }
 
   function ring(t, r) {
     const w = Math.max(1, r * 0.26);
     ctx.beginPath();
-    ctx.fillStyle = COL[t.bucket].hot;
+    ctx.fillStyle = COL[t.b].hot;
     ctx.arc(t.px, t.py, r, 0, TAU);
     ctx.fill();
     ctx.beginPath();
@@ -737,7 +1114,7 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
     ctx.arc(t.px, t.py, r + w / 2, 0, TAU);
     ctx.stroke();
     ctx.beginPath();
-    ctx.strokeStyle = COL[t.bucket].hot;
+    ctx.strokeStyle = COL[t.b].hot;
     ctx.lineWidth = 1.2;
     ctx.arc(t.px, t.py, r + w + 0.6, 0, TAU);
     ctx.stroke();
@@ -779,6 +1156,14 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
 
   // ── hover + tooltip ─────────────────────────────────────────────────
   const tip = document.getElementById("tip");
+  function placeTip(clientX, clientY) {
+    const stage = document.getElementById("stage").getBoundingClientRect();
+    let tx = clientX - stage.left + 16, ty = clientY - stage.top + 14;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    if (tx + tw > stage.width - 12) tx = clientX - stage.left - tw - 14;
+    if (ty + th > stage.height - 12) ty = clientY - stage.top - th - 12;
+    tip.style.left = tx + "px"; tip.style.top = ty + "px";
+  }
   cv.addEventListener("mousemove", ev => {
     const rect = cv.getBoundingClientRect();
     const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
@@ -793,12 +1178,7 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
       cv.style.cursor = "pointer";
       tip.innerHTML = tipHTML(hovered);
       tip.style.display = "block";
-      const stage = document.getElementById("stage").getBoundingClientRect();
-      let tx = ev.clientX - stage.left + 16, ty = ev.clientY - stage.top + 14;
-      const tw = tip.offsetWidth, th = tip.offsetHeight;
-      if (tx + tw > stage.width - 12) tx = ev.clientX - stage.left - tw - 14;
-      if (ty + th > stage.height - 12) ty = ev.clientY - stage.top - th - 12;
-      tip.style.left = tx + "px"; tip.style.top = ty + "px";
+      placeTip(ev.clientX, ev.clientY);
     } else {
       cv.style.cursor = "crosshair";
       tip.style.display = "none";
@@ -820,14 +1200,21 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
     kick();
   });
 
+  function rankLine(t) {
+    if (!t.b) return "";
+    const n = lists[t.b].length;
+    if (S.scope && t.vr) return `<div>Rank <span class="t-b">#${fmtInt(t.vr)}</span> of ${fmtInt(n)} in ${esc(S.scope.label)}</div>`;
+    if (t.rk) return `<div>Rank <span class="t-b">#${fmtInt(t.rk)}</span> of ${fmtInt(n)}${isDefault() ? "" : " under current cuts"}</div>`;
+    return "";
+  }
   function tipHTML(t) {
     const c = t.county;
     return `
-        <div class="t-head" style="color:${COL[t.bucket].hot}">${COL[t.bucket].name}</div>
+        <div class="t-head" style="color:${COL[t.b].hot}">${COL[t.b].name}</div>
         <div class="t-sub">Tract ${t.fips} · ${esc(c.name)}, ${esc(c.state)}</div>
         <div>DDI <span class="t-b">${t.ddi.toFixed(1)}</span> ·
              burden z <span class="t-b">${fmtNum(t.burdenZ, 2)}</span></div>
-        ${t.rank ? `<div>Rank <span class="t-b">#${fmtInt(t.rank)}</span> of ${fmtInt(t.bucket === 1 ? (M.nDeployRanked ?? M.nDeploy) : (M.nInvestRanked ?? M.nInvest))}</div>` : ""}
+        ${rankLine(t)}
         <div class="t-hint">Click for the full tract profile</div>`;
   }
 
@@ -841,9 +1228,11 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
   document.getElementById("panel-close").addEventListener("click", deselect);
   window.addEventListener("keydown", ev => {
     if (ev.key !== "Escape") return;
-    if ($about.classList.contains("open")) closeAbout();
+    if (!$thr.hidden) openThr(false);
+    else if ($about.classList.contains("open")) closeAbout();
     else if (panel.classList.contains("open")) deselect();
-    else if (FOCUS_CI != null) clearFocus();
+    else if (S.listOpen) openList(false);
+    else if (S.scope) clearScope();
     else deselect();
   });
 
@@ -866,12 +1255,12 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
     if (ev.target.closest("#about-panel, #about-btn")) return;
     closeAbout();
   });
-  // A click in any white space outside the plot, the panel, and the
-  // controls also closes the panel.
+  // A click in any white space outside the plot, the panels and the
+  // controls also closes the tract panel.
   document.addEventListener("click", ev => {
     if (!panel.classList.contains("open")) return;
     if (ev.target === cv) return;                       // canvas handles its own clicks
-    if (ev.target.closest("#panel, #hl, #legend, #table-view, #table-btn, #about-panel, #about-btn, .search-wrap, #focus-chip")) return;
+    if (ev.target.closest("#panel, #controls, #thr-panel, #legend, #list-panel, #about-panel, #about-btn, .search-wrap, #settings-line")) return;
     deselect();
   });
   function openPanel(t) {
@@ -887,21 +1276,20 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
 
   function panelHTML(t) {
     const c = t.county;
-    const bucketCls = t.bucket === 1 ? "deploy" : t.bucket === 2 ? "invest" : "other";
-    const total = t.bucket === 1 ? (M.nDeployRanked ?? M.nDeploy) : (M.nInvestRanked ?? M.nInvest);
+    const bucketCls = t.b === 1 ? "deploy" : t.b === 2 ? "invest" : "other";
 
     return `
       <div class="eyebrow">Census tract ${t.fips}</div>
       <div class="p-title">Tract ${t.fips.slice(5)}</div>
       <div class="p-meta">${esc(c.name)}, ${esc(c.state)}${c.cbsa ? " · " + esc(c.cbsa) : ""}</div>
-      <span class="badge ${bucketCls}">${COL[t.bucket].name}</span>
+      <span class="badge ${bucketCls}">${COL[t.b].name}</span>
 
       <div class="summary">
         <div class="eyebrow">What we think about this tract</div>
         <ul>${interpret(t).map(s => `<li>${s}</li>`).join("")}</ul>
       </div>
 
-      ${targetingSec(t, bucketCls, total)}
+      ${targetingSec(t, bucketCls)}
 
       <div class="sec">Disease burden (tract)</div>
       <div class="kv">
@@ -939,26 +1327,37 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
     `;
   }
 
-  function targetingSec(t, cls, total) {
-    if (t.bucket === 0) {
-      const why = t.burdenZ <= 0
+  function targetingSec(t, cls) {
+    const def = isDefault();
+    if (t.b === 0) {
+      let why;
+      if (t.burdenZ <= S.bCut) why = def
         ? "Its burden sits at or below the national average, so it falls outside both priority groups."
-        : "It falls outside the priority groups under the matrix cuts.";
+        : `Its burden sits at or below the current burden cut (z = ${S.bCut.toFixed(2)}), so it falls outside both priority groups.`;
+      else why = `Its DDI of ${fmtNum(t.ddi, 1)} falls between the deployment and investment cuts, so it is in neither group under the current settings.`;
+      const studyNote = (!def && t.bucket) ? ` Under the study thresholds it is a${t.bucket === 1 ? " deployment" : "n investment"}-priority tract.` : "";
       return `<div class="sec">Digital Health Prioritization</div>
-        <p class="note" style="margin-top:2px">This tract sits in the workforce-constrained pool but is not a priority tract. ${why}</p>`;
+        <p class="note" style="margin-top:2px">This tract sits in the workforce-constrained pool but is not a priority tract. ${why}${studyNote}</p>`;
     }
-    const blurb = t.bucket === 1
+    const blurb = t.b === 1
       ? "High cardiovascular burden with higher digital readiness. This tract may be positioned for telecardiology and remote monitoring."
       : "High cardiovascular burden with lower digital readiness. This tract may require broadband, device, and digital-literacy investment alongside any remote-care effort.";
+    const n = lists[t.b].length;
+    const studyRank = t.rank
+      ? `#${fmtInt(t.rank)} of ${fmtInt(t.bucket === 1 ? M.nDeployRanked : M.nInvestRanked)}`
+      : (t.hidden ? "not ranked (KY/PA)" : (t.bucket ? "—" : "outside the group"));
+    const rows = [
+      [`Group${def ? "" : " (current cuts)"}`, `<span style="color:${COL[t.b].hot}">${t.b === 1 ? "Deployment priority" : "Investment priority"}</span>`],
+      S.scope ? [`Rank in ${esc(S.scope.label)}`, t.vr ? `#${fmtInt(t.vr)} of ${fmtInt(n)}` : "—"] : null,
+      [def ? "National rank" : "National rank (current cuts)", t.rk ? `#${fmtInt(t.rk)} of ${fmtInt(shown.filter(x => x.b === t.b).length)}` : "—"],
+      def ? null : ["National rank (study thresholds)", studyRank],
+      ["Priority score", fmtNum(t.sc, 2)],
+      ["DDI", fmtNum(t.ddi, 1)],
+      ["Burden z", fmtNum(t.burdenZ, 2)],
+    ].filter(Boolean);
     return `
       <div class="sec ${cls}">Digital Health Prioritization</div>
-      <div class="kv">
-        <div class="k">Group</div>          <div class="v" style="color:${COL[t.bucket].hot}">${t.bucket === 1 ? "Deployment priority" : "Investment priority"}</div>
-        <div class="k">National rank</div>  <div class="v">${t.rank ? "#" + fmtInt(t.rank) + " of " + fmtInt(total) : "—"}</div>
-        <div class="k">Priority score</div> <div class="v">${fmtNum(t.score, 2)}</div>
-        <div class="k">DDI</div>            <div class="v">${fmtNum(t.ddi, 1)}</div>
-        <div class="k">Burden z</div>       <div class="v">${fmtNum(t.burdenZ, 2)}</div>
-      </div>
+      <div class="kv">${rows.map(([k, v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join("")}</div>
       <p class="note">${blurb}</p>`;
   }
 
@@ -966,8 +1365,8 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
   function interpret(t) {
     const s = [];
     const c = t.county;
+    const def = isDefault();
 
-    // burden sentence
     if (t.burdenTrend === 1 && t.bzFirst != null) {
       s.push(`Cardiometabolic burden is <b>rising</b>. The composite z moved from ${fmtNum(t.bzFirst, 2)} to ${fmtNum(t.bzLast, 2)}.`);
     } else if (t.burdenTrend === -1 && t.bzFirst != null) {
@@ -978,24 +1377,30 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
       s.push(`Cardiometabolic burden sits at composite z = ${fmtNum(t.burdenZ, 2)}${t.burdenPct != null ? `, in the ${ordinal(t.burdenPct)} national percentile` : ""}. Trend data is not available for this tract.`);
     }
 
-    // workforce sentence
     if (c.poolReason === 1) {
       s.push(`The parent county had <b>no cardiologists</b> in 2023.`);
     } else if (c.poolReason === 2) {
       s.push(`The parent county's cardiology workforce <b>declined per capita</b> from 2010 to 2023${c.rateFirst != null && c.rateLast != null ? ` (${fmtNum(c.rateFirst, 1)} to ${fmtNum(c.rateLast, 1)} per 100,000)` : ""}.`);
     }
 
-    // readiness sentence
-    const ready = t.ddi <= M.natMedianDDI;
-    s.push(`Its Digital Divide Index of ${fmtNum(t.ddi, 1)} sits <b>${ready ? "below" : "above"}</b> the national median of ${M.natMedianDDI.toFixed(1)}, so it carries <b>${ready ? "higher" : "lower"} readiness</b>.`);
+    if (def) {
+      const ready = t.ddi <= NAT;
+      s.push(`Its Digital Divide Index of ${fmtNum(t.ddi, 1)} sits <b>${ready ? "below" : "above"}</b> the national median of ${NAT.toFixed(1)}, so it carries <b>${ready ? "higher" : "lower"} readiness</b>.`);
+    } else if (t.ddi <= S.rLo) {
+      s.push(`Its Digital Divide Index of ${fmtNum(t.ddi, 1)} sits at or below the deployment cut of ${S.rLo.toFixed(1)}, so it carries <b>higher readiness</b> under the current settings.`);
+    } else if (t.ddi > S.rHi) {
+      s.push(`Its Digital Divide Index of ${fmtNum(t.ddi, 1)} sits above the investment cut of ${S.rHi.toFixed(1)}, so it carries <b>lower readiness</b> under the current settings.`);
+    } else {
+      s.push(`Its Digital Divide Index of ${fmtNum(t.ddi, 1)} sits between the two readiness cuts (${S.rLo.toFixed(1)} and ${S.rHi.toFixed(1)}).`);
+    }
 
-    // verdict
-    if (t.bucket === 1) {
+    if (t.b === 1) {
       s.push(`This makes it a <b>deployment-priority tract</b>. Digital health tools may reach patients here without new infrastructure investment.`);
-    } else if (t.bucket === 2) {
+    } else if (t.b === 2) {
       s.push(`This makes it an <b>investment-priority tract</b>. Infrastructure and digital-literacy investment may need to come first.`);
-    } else if (t.burdenZ <= 0) {
-      s.push(`Burden sits at or below the national average, so this tract sits <b>outside the priority groups</b>.`);
+    } else if (t.burdenZ <= S.bCut) {
+      s.push(def ? `Burden sits at or below the national average, so this tract sits <b>outside the priority groups</b>.`
+                 : `Burden sits at or below the current burden cut, so this tract sits <b>outside the priority groups</b>.`);
     }
     return s;
   }
@@ -1046,9 +1451,239 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
     return `${fmtNum(c.rateFirst, 1)} → ${fmtNum(c.rateLast, 1)}`;
   }
 
+  // ── leading tracts list ─────────────────────────────────────────────
+  const $listBtn = document.getElementById("list-btn");
+  const $list = document.getElementById("list-panel");
+  const $listBody = document.getElementById("list-body");
+  function openList(open) {
+    S.listOpen = open;
+    $list.classList.toggle("open", open);
+    $list.setAttribute("aria-hidden", String(!open));
+    $listBtn.setAttribute("aria-pressed", String(open));
+    document.body.classList.toggle("list-open", open);
+    if (open) renderList();
+    base = null;
+    layout();                                   // the chart narrows while the list is open
+  }
+  $listBtn.addEventListener("click", () => openList(!S.listOpen));
+  document.getElementById("list-close").addEventListener("click", () => openList(false));
+  document.getElementById("list-grp").addEventListener("click", ev => {
+    const b = ev.target.closest("button[data-g]"); if (!b) return;
+    S.listGroup = +b.dataset.g;
+    document.querySelectorAll("#list-grp button").forEach(x => x.classList.toggle("on", x === b));
+    renderList();
+  });
+  document.getElementById("list-n").addEventListener("click", ev => {
+    const b = ev.target.closest("button[data-n]"); if (!b) return;
+    S.listN = +b.dataset.n;
+    document.querySelectorAll("#list-n button").forEach(x => x.classList.toggle("on", x === b));
+    renderList(); base = null; draw();
+  });
+  document.getElementById("hl-sw").addEventListener("change", ev => {
+    S.hl = ev.target.checked; base = null; draw();
+  });
+  function listRows(b) { return lists[b].slice(0, S.listN); }
+  function renderList() {
+    if (!S.listOpen) return;
+    const b = S.listGroup;
+    const rows = listRows(b);
+    const total = lists[b].length;
+    document.getElementById("list-sub").textContent =
+      `${S.scope ? S.scope.label : "National"} · ${burdenLabel().replace(/&gt;/g, ">").replace(/&le;/g, "≤")} · `
+      + (S.rLo === S.rHi ? `DDI cut ${S.rLo.toFixed(1)}` : `DDI ≤ ${S.rLo.toFixed(1)} / > ${S.rHi.toFixed(1)}`);
+    if (!rows.length) {
+      $listBody.innerHTML = `<p class="lt-empty">No ${b === 1 ? "deployment" : "investment"}-priority tracts
+        ${S.scope ? "in " + esc(S.scope.label) : ""} under the current thresholds.
+        ${S.scope && S.scope.kind === "state" && (S.scope.key === "KY" || S.scope.key === "PA")
+          ? "Kentucky and Pennsylvania tracts hold group membership but are not plotted or ranked." : ""}</p>`;
+    } else {
+      $listBody.innerHTML = `<table class="lt-table"><thead><tr>
+          <th class="num">#</th><th>Tract</th><th class="num">DDI</th><th class="num">Burden z</th>
+        </tr></thead><tbody>${rows.map(t => `
+        <tr tabindex="0" role="button" data-f="${t.fips}"
+            aria-label="Open tract ${t.fips}, ${esc(t.county.name)}, ${esc(t.county.state)}, rank ${t.vr}">
+          <td class="num rk">${t.vr}</td>
+          <td>${t.fips}<span class="sub">${esc(t.county.name)}, ${esc(t.county.state)}${
+            S.scope ? ` · national #${fmtInt(t.rk)}` : ""}${
+            !isDefault() && t.rank && t.bucket === b ? ` · study #${fmtInt(t.rank)}` : ""}</span></td>
+          <td class="num">${t.ddi.toFixed(1)}</td>
+          <td class="num">${fmtNum(t.burdenZ, 2)}</td>
+        </tr>`).join("")}</tbody></table>`;
+    }
+    document.getElementById("list-foot-note").textContent =
+      `${fmtInt(Math.min(S.listN, total))} of ${fmtInt(total)} ${b === 1 ? "deployment" : "investment"}-priority tracts, by priority score`;
+  }
+  const findTract = f => shown.find(t => t.fips === f);
+  function openFromList(f) {
+    const t = findTract(f);
+    if (!t) return;
+    if (selected && selected !== t) setAnim(selected, 0);
+    selected = t;
+    setAnim(t, HOVER_R);
+    openPanel(t);
+    kick();
+  }
+  $listBody.addEventListener("click", ev => {
+    const r = ev.target.closest("tr[data-f]");
+    if (r) openFromList(r.dataset.f);
+  });
+  $listBody.addEventListener("keydown", ev => {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    const r = ev.target.closest("tr[data-f]");
+    if (!r) return;
+    ev.preventDefault();
+    openFromList(r.dataset.f);
+  });
+  // hovering a row rings its dot
+  $listBody.addEventListener("mouseover", ev => {
+    const r = ev.target.closest("tr[data-f]");
+    const t = r ? findTract(r.dataset.f) : null;
+    if (t === hovered) return;
+    if (hovered && hovered !== selected) setAnim(hovered, 0);
+    hovered = t;
+    if (t && t !== selected) setAnim(t, HOVER_R);
+    kick();
+  });
+  $listBody.addEventListener("mouseleave", () => {
+    if (hovered && hovered !== selected) setAnim(hovered, 0);
+    hovered = null; kick();
+  });
+
+  // CSV of the listed tracts, settings in the first lines
+  document.getElementById("csv-btn").addEventListener("click", () => {
+    const b = S.listGroup;
+    const q = s => `"${String(s == null ? "" : s).replace(/"/g, '""')}"`;
+    const head = [
+      `# Implementation Decision Space, leading ${b === 1 ? "deployment" : "investment"}-priority tracts`,
+      `# View: ${S.scope ? S.scope.label : "all workforce-constrained tracts"}`,
+      `# Burden cut: z > ${S.bCut.toFixed(2)}; deployment DDI <= ${S.rLo.toFixed(1)}; investment DDI > ${S.rHi.toFixed(1)}`,
+      `# Kentucky and Pennsylvania tracts are not ranked (single-measure burden)`,
+      ["rank_in_view", "rank_national_current_cuts", "rank_national_study", "tract_fips", "county", "state",
+       "metro_area", "ddi", "burden_z", "priority_score"].join(","),
+    ];
+    const lines = listRows(b).map(t => [
+      t.vr, t.rk, (t.rank && t.bucket === b) ? t.rank : "", t.fips, q(t.county.name), t.county.state,
+      q(t.county.metro), t.ddi.toFixed(1), fmtNum(t.burdenZ, 3), fmtNum(t.sc, 3),
+    ].join(","));
+    const blob = new Blob([head.concat(lines).join("\n") + "\n"], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const tag = S.scope ? S.scope.label.replace(/[^A-Za-z0-9]+/g, "_") : "national";
+    a.download = `leading_${b === 1 ? "deployment" : "investment"}_tracts_${tag}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  // ── search: state, county, metropolitan area, tract FIPS ────────────
+  const $sInput = document.getElementById("search-input");
+  const $sResults = document.getElementById("search-results");
+
+  const tractCount = new Array(counties.length).fill(0);   // plotted tracts per county
+  const poolCount = new Array(counties.length).fill(0);    // pool tracts incl. KY/PA
+  tracts.forEach(t => { poolCount[t.ci] += 1; if (!t.hidden) tractCount[t.ci] += 1; });
+  const stateCount = {}, metroCount = {};
+  tracts.forEach(t => {
+    stateCount[t.county.state] = (stateCount[t.county.state] || 0) + 1;
+    if (t.county.metro) metroCount[t.county.metro] = (metroCount[t.county.metro] || 0) + 1;
+  });
+  const idx = [];
+  for (const [ab, nm] of Object.entries(STATES)) {
+    if (stateCount[ab]) idx.push({ kind: "state", key: ab, label: nm, sub: `${ab} · state`, n: stateCount[ab],
+                                   k: (nm + " " + ab).toLowerCase() });
+  }
+  for (const [nm, n] of Object.entries(metroCount)) {
+    idx.push({ kind: "metro", key: nm, label: nm, sub: "metropolitan area", n, k: nm.toLowerCase() });
+  }
+  counties.forEach((c, i) => {
+    if (!poolCount[i]) return;
+    idx.push({ kind: "county", key: i, label: `${c.name}, ${c.state}`, sub: `${c.fips} · county`, n: poolCount[i],
+               k: (c.name + " " + c.state + " " + c.fips).toLowerCase() });
+  });
+  const KIND_ORDER = { state: 0, metro: 1, county: 2 };
+
+  function hideResults() { $sResults.hidden = true; $sResults.innerHTML = ""; }
+
+  function runSearch(qRaw) {
+    const q = qRaw.trim().toLowerCase();
+    if (q.length < 2) { hideResults(); return; }
+    let html = "";
+    if (/^\d{6,11}$/.test(q)) {              // a tract FIPS prefix
+      const hits = shown.filter(t => t.fips.startsWith(q)).slice(0, 8);
+      html = hits.map(t => `
+        <button type="button" class="search-row" data-f="${t.fips}">
+          <b>Tract ${t.fips}</b>
+          <span class="cnt">${esc(t.county.name)}, ${esc(t.county.state)}</span>
+        </button>`).join("");
+    }
+    if (!html) {
+      const hits = idx.filter(e => e.k.includes(q))
+        .sort((a, b) => (a.k.startsWith(q) === b.k.startsWith(q) ? 0 : a.k.startsWith(q) ? -1 : 1)
+                        || KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || b.n - a.n)
+        .slice(0, 9);
+      html = hits.map(e => `
+        <button type="button" class="search-row" data-kind="${e.kind}" data-key="${esc(String(e.key))}">
+          <b>${esc(e.label)}</b>
+          <span class="cnt">${esc(e.sub)} · ${fmtInt(e.n)} tract${e.n === 1 ? "" : "s"}</span>
+        </button>`).join("");
+    }
+    if (!html) html = `<div class="search-empty">No matching state, county or metropolitan area in the workforce-constrained pool.</div>`;
+    $sResults.innerHTML = html;
+    $sResults.hidden = false;
+  }
+
+  function setScope(kind, key) {
+    let label;
+    if (kind === "state") label = STATES[key] || key;
+    else if (kind === "county") { const c = counties[key]; label = `${c.name}, ${c.state}`; }
+    else label = key;
+    S.scope = { kind, key, label };
+    hideResults();
+    $sInput.value = "";
+    refresh();
+  }
+  function clearScope(redraw = true) {
+    if (!S.scope) return;
+    S.scope = null;
+    if (redraw) refresh();
+  }
+
+  $sInput.addEventListener("input", () => runSearch($sInput.value));
+  $sInput.addEventListener("keydown", ev => {
+    if (ev.key === "Escape" && !$sResults.hidden) {
+      hideResults(); ev.stopPropagation();
+    } else if (ev.key === "Enter" || ev.key === "ArrowDown") {
+      const first = $sResults.querySelector("button.search-row");
+      if (first) { ev.key === "Enter" ? first.click() : first.focus(); ev.preventDefault(); }
+    }
+  });
+  $sResults.addEventListener("click", ev => {
+    const b = ev.target.closest("button.search-row");
+    if (!b) return;
+    if (b.dataset.f) {
+      const t = findTract(b.dataset.f);
+      if (t) { setScope("county", t.ci); window.__ds.select(t); }
+    } else {
+      setScope(b.dataset.kind, b.dataset.kind === "county" ? +b.dataset.key : b.dataset.key);
+    }
+  });
+  $sResults.addEventListener("keydown", ev => {
+    const rows = [...$sResults.querySelectorAll("button.search-row")];
+    const i = rows.indexOf(document.activeElement);
+    if (ev.key === "ArrowDown" && i > -1 && i < rows.length - 1) {
+      rows[i + 1].focus(); ev.preventDefault();
+    } else if (ev.key === "ArrowUp" && i > -1) {
+      (i > 0 ? rows[i - 1] : $sInput).focus(); ev.preventDefault();
+    } else if (ev.key === "Escape") {
+      hideResults(); $sInput.focus(); ev.stopPropagation();
+    }
+  });
+  document.addEventListener("click", ev => {
+    if (!ev.target.closest(".search-wrap")) hideResults();
+  });
+
   // ── walkthrough hooks (used by tour-steps.js) ───────────────────────
   window.__ds = {
-    find: pred => tracts.find(pred),
+    find: pred => shown.find(pred),
     hover: t => {
       if (!t) return;
       if (hovered && hovered !== selected) setAnim(hovered, 0);
@@ -1079,178 +1714,25 @@ INVESTMENT PRIORITY = high burden AND lower readiness</pre>
       closePanel();
       kick();
     },
-    clickSeg: n => {
-      const b = document.querySelector(`#hl-seg button[data-n="${n}"]`);
-      if (b) b.click();
+    setPreset: (b, r) => {
+      if (b) S.bCut = PRESET_B[b];
+      if (r) [S.rLo, S.rHi] = PRESET_R[r];
+      refresh();
     },
+    resetThresholds: () => resetThresholds(),
+    openThresholds: open => openThr(open),
+    setScope, clearScope,
+    openList: open => openList(open),
+    setListN: n => { const b = document.querySelector(`#list-n button[data-n="${n}"]`); if (b) b.click(); },
+    settings: () => ({ ...S }),
+    view: () => view,
+    lists: () => lists,
   };
-
-  // ── accessible table view (alternative to the canvas) ───────────────
-  const $tableBtn = document.getElementById("table-btn");
-  const $tableView = document.getElementById("table-view");
-  let tableBuilt = false;
-  function buildTableView() {
-    if (tableBuilt) return;
-    tableBuilt = true;
-    const section = (label, bucket, totalRanked) => {
-      const rows = tracts.filter(t => t.bucket === bucket && t.rank != null)
-        .sort((a, b) => a.rank - b.rank).slice(0, 100);
-      const trs = rows.map(t => `
-        <tr tabindex="0" role="button" data-f="${t.fips}"
-            aria-label="Open tract ${t.fips}, rank ${t.rank}">
-          <td class="num">#${t.rank}</td>
-          <td>${t.fips}</td>
-          <td>${esc(t.county.name)}, ${esc(t.county.state)}</td>
-          <td class="num">${t.ddi.toFixed(1)}</td>
-          <td class="num">${fmtNum(t.burdenZ, 2)}</td>
-          <td class="num">${t.score != null ? Number(t.score).toFixed(2) : "—"}</td>
-        </tr>`).join("");
-      return `<h2>${label}</h2>
-        <p class="tv-note">First 100 of ${fmtInt(totalRanked)} ranked tracts, in rank
-          order. Kentucky and Pennsylvania tracts hold group membership but are not
-          ranked. Click a row, or press Enter on it, to open the tract profile.</p>
-        <table class="tv-table"><thead><tr>
-          <th class="num">Rank</th><th>Tract FIPS</th><th>County</th>
-          <th class="num">DDI</th><th class="num">Burden z</th>
-          <th class="num">Priority score</th>
-        </tr></thead><tbody>${trs}</tbody></table>`;
-    };
-    $tableView.innerHTML =
-      section("Deployment-priority tracts", 1, M.nDeployRanked ?? M.nDeploy) +
-      section("Investment-priority tracts", 2, M.nInvestRanked ?? M.nInvest);
-    const open = f => {
-      const t = tracts.find(x => x.fips === f);
-      if (!t) return;
-      if (selected && selected !== t) setAnim(selected, 0);
-      selected = t;
-      openPanel(t);
-    };
-    $tableView.addEventListener("click", e => {
-      const r = e.target.closest("tr[data-f]");
-      if (r) open(r.dataset.f);
-    });
-    $tableView.addEventListener("keydown", e => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      const r = e.target.closest("tr[data-f]");
-      if (!r) return;
-      e.preventDefault();
-      open(r.dataset.f);
-    });
-  }
-  $tableBtn.addEventListener("click", () => {
-    const on = $tableView.hidden;
-    if (on) buildTableView();
-    $tableView.hidden = !on;
-    $tableBtn.setAttribute("aria-pressed", String(on));
-    $tableBtn.textContent = on ? "View as chart" : "View as table";
-    document.getElementById("chart-wrap").style.visibility = on ? "hidden" : "visible";
-    document.getElementById("legend").style.display = on ? "none" : "";
-    hlBox.style.display = on ? "none" : "";
-    if (!on) layout();          // re-measure when the chart returns
-  });
-
-  // ── county / FIPS search + county focus ─────────────────────────────
-  const $sInput = document.getElementById("search-input");
-  const $sResults = document.getElementById("search-results");
-  const $chip = document.getElementById("focus-chip");
-  let FOCUS_CI = null;
-
-  const tractCount = new Array(counties.length).fill(0);
-  tracts.forEach(t => { tractCount[t.ci] += 1; });
-  const searchIdx = counties.map((c, i) => ({
-    i, c, key: (c.name + " " + c.state + " " + c.fips).toLowerCase(),
-  })).filter(e => tractCount[e.i] > 0);
-
-  function hideResults() { $sResults.hidden = true; $sResults.innerHTML = ""; }
-
-  function runSearch(qRaw) {
-    const q = qRaw.trim().toLowerCase();
-    if (q.length < 2) { hideResults(); return; }
-    let html = "";
-    if (/^\d{6,11}$/.test(q)) {              // a tract FIPS prefix
-      const hits = tracts.filter(t => t.fips.startsWith(q)).slice(0, 8);
-      html = hits.map(t => `
-        <button type="button" class="search-row" data-f="${t.fips}">
-          <b>Tract ${t.fips}</b>
-          <span class="cnt">${esc(t.county.name)}, ${esc(t.county.state)}</span>
-        </button>`).join("");
-    }
-    if (!html) {
-      const hits = searchIdx.filter(e => e.key.includes(q)).slice(0, 8);
-      html = hits.map(e => `
-        <button type="button" class="search-row" data-i="${e.i}">
-          <b>${esc(e.c.name)}, ${esc(e.c.state)}</b>
-          <span class="cnt">${e.c.fips} · ${fmtInt(tractCount[e.i])} tract${tractCount[e.i] === 1 ? "" : "s"}</span>
-        </button>`).join("");
-    }
-    if (!html) {
-      const off = counties.some((c, i) => tractCount[i] === 0 &&
-        (c.name + " " + c.state + " " + c.fips).toLowerCase().includes(q));
-      html = `<div class="search-empty">${off
-        ? "That county is in the pool but its tracts are not plotted (Kentucky and Pennsylvania, see About)."
-        : "No matching workforce-constrained county."}</div>`;
-    }
-    $sResults.innerHTML = html;
-    $sResults.hidden = false;
-  }
-
-  function focusCounty(i) {
-    FOCUS_CI = i;
-    const zeroBtn = document.querySelector('#hl-seg button[data-n="0"]');
-    if (hlN > 0 && zeroBtn) zeroBtn.click();  // focus replaces the top-N highlight
-    const c = counties[i];
-    $chip.innerHTML = `<span aria-hidden="true">✕</span> ${esc(c.name)}, ${esc(c.state)} · ${fmtInt(tractCount[i])} tract${tractCount[i] === 1 ? "" : "s"}`;
-    $chip.setAttribute("aria-label", `Clear the focus on ${c.name}, ${c.state}`);
-    $chip.classList.add("on");
-    base = null; draw();
-    hideResults();
-    $sInput.value = "";
-  }
-
-  function clearFocus(redraw = true) {
-    if (FOCUS_CI == null) return;
-    FOCUS_CI = null;
-    $chip.classList.remove("on");
-    if (redraw) { base = null; draw(); }
-  }
-  $chip.addEventListener("click", () => clearFocus());
-
-  $sInput.addEventListener("input", () => runSearch($sInput.value));
-  $sInput.addEventListener("keydown", ev => {
-    if (ev.key === "Escape" && !$sResults.hidden) {
-      hideResults(); ev.stopPropagation();
-    } else if (ev.key === "Enter" || ev.key === "ArrowDown") {
-      const first = $sResults.querySelector("button.search-row");
-      if (first) { ev.key === "Enter" ? first.click() : first.focus(); ev.preventDefault(); }
-    }
-  });
-  $sResults.addEventListener("click", ev => {
-    const b = ev.target.closest("button.search-row");
-    if (!b) return;
-    if (b.dataset.f) {
-      const t = tracts.find(x => x.fips === b.dataset.f);
-      if (t) { focusCounty(t.ci); window.__ds.select(t); }
-    } else {
-      focusCounty(+b.dataset.i);
-    }
-  });
-  $sResults.addEventListener("keydown", ev => {
-    const rows = [...$sResults.querySelectorAll("button.search-row")];
-    const idx = rows.indexOf(document.activeElement);
-    if (ev.key === "ArrowDown" && idx > -1 && idx < rows.length - 1) {
-      rows[idx + 1].focus(); ev.preventDefault();
-    } else if (ev.key === "ArrowUp" && idx > -1) {
-      (idx > 0 ? rows[idx - 1] : $sInput).focus(); ev.preventDefault();
-    } else if (ev.key === "Escape") {
-      hideResults(); $sInput.focus(); ev.stopPropagation();
-    }
-  });
-  document.addEventListener("click", ev => {
-    if (!ev.target.closest(".search-wrap")) hideResults();
-  });
 
   // ── go ──────────────────────────────────────────────────────────────
   window.addEventListener("resize", layout);
+  classify();
+  renderKpis(); renderLegend(); renderSettings(); renderThrPanel();
   layout();
   document.getElementById("loading").classList.add("gone");
 })().catch(err => {

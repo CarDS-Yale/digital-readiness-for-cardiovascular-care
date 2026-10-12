@@ -1,4 +1,13 @@
-"""Build the compact dataset for the decision-space page (priority matrix framing)."""
+"""Build the compact dataset for the decision-space page.
+
+One record per tract in the workforce-constrained pool, with the fields the
+page needs to redraw the classification under user-chosen thresholds: the
+standardized burden and readiness values behind the priority scores, the
+national cut points the threshold presets use, and the county's state and
+metropolitan area for the scope control. Kentucky and Pennsylvania tracts are
+carried as hidden rows so national counts stay right when the thresholds
+move; the page never plots or ranks them.
+"""
 import json, os
 import numpy as np, pandas as pd
 
@@ -39,6 +48,18 @@ pool = set(wf[no_card | declining]["fips_st_cnty"])
 print(f"pool counties {len(pool):,}  (no-card {int(no_card.sum()):,} declining {int(declining.sum()):,})")
 
 tracts = burden.merge(ddi, on="fips_tract", how="left")
+# national cut points for the threshold presets, taken over every tract with
+# the measure, the same way sens_thresholds.py takes them
+nat_b = tracts.drop_duplicates("fips_tract")["burden_z"].dropna()
+nat_d = tracts.drop_duplicates("fips_tract")["ddi"].dropna()
+cuts = {
+    "burdenP75": round(float(nat_b.quantile(0.75)), 4),
+    "burdenP90": round(float(nat_b.quantile(0.90)), 4),
+    "ddiP10": round(float(nat_d.quantile(0.10)), 3),
+    "ddiP25": round(float(nat_d.quantile(0.25)), 3),
+    "ddiP75": round(float(nat_d.quantile(0.75)), 3),
+    "ddiP90": round(float(nat_d.quantile(0.90)), 3),
+}
 P = (tracts[tracts["fips_county"].isin(pool)]
      .dropna(subset=["burden_z", "ddi"]).drop_duplicates("fips_tract").copy())
 print(f"pool tracts {len(P):,}  nat median DDI {nat_med:.2f}")
@@ -48,6 +69,7 @@ P["high_burden"] = P["burden_z"] > 0
 P["ready"] = P["ddi"] <= nat_med
 zb = (P["burden_z"] - P["burden_z"].mean()) / P["burden_z"].std()
 zr = (P["ddi"] - P["ddi"].mean()) / P["ddi"].std()
+P["zb"], P["zr"] = zb, zr          # the page rebuilds both scores from these
 P["deploy_score"] = zb - zr
 P["invest_score"] = zb + zr
 P["bucket"] = np.where(P["high_burden"] & P["ready"], 1,
@@ -90,10 +112,12 @@ for df in (dep_e, inv_e):
         rank_map[f] = int(r)
 P["rank"] = P["fips_tract"].map(rank_map)
 
-# the plotted cloud excludes KY/PA entirely (single-measure burden axis)
+# KY/PA stay in the file as hidden rows (single-measure burden axis): they
+# count toward the totals but are never plotted or ranked
 n_before = len(P)
-P = P[~P["fips_tract"].str[:2].isin(RANK_EXCLUDE_STATES)].copy()
-print(f"KY/PA excluded from plot: {n_before - len(P):,} tracts "
+P["hidden"] = P["fips_tract"].str[:2].isin(RANK_EXCLUDE_STATES).astype(int)
+n_shown = int((P["hidden"] == 0).sum())
+print(f"KY/PA hidden from plot: {n_before - n_shown:,} tracts "
       f"(deploy ranked {len(dep_e):,}/{n_dep_full:,}, "
       f"invest ranked {len(inv_e):,}/{n_inv_full:,})")
 
@@ -143,11 +167,14 @@ for row in P.itertuples(index=False):
     tract_rows.append([
         row.fips_tract,
         cidx[row.fips_county],
-        rnd(row.ddi, 1),                 # x
-        rnd(row.burden_z, 3),            # y
+        rnd(row.ddi, 2),                 # x; two decimals keep the preset cuts honest
+        rnd(row.burden_z, 4),            # y
         int(row.bucket),
         int(row.rank) if not pd.isna(row.rank) else None,
         rnd(score, 2),
+        rnd(row.zb, 4),
+        rnd(row.zr, 4),
+        int(row.hidden),
         rnd(row.ddi_pct_nat, 0),
         rnd(row.burden_pct, 1),
         TREND.get(t.get("burden_trend"), None),
@@ -171,20 +198,27 @@ out = {
         "nDeploy": n_dep_full,
         "nInvest": n_inv_full,
         # what the page can actually plot and rank (KY/PA out)
-        "nPlotted": int(len(P)),
-        "nDeployShown": int((P.bucket == 1).sum()),
-        "nInvestShown": int((P.bucket == 2).sum()),
+        "nPlotted": n_shown,
+        "nDeployShown": int(((P.bucket == 1) & (P.hidden == 0)).sum()),
+        "nInvestShown": int(((P.bucket == 2) & (P.hidden == 0)).sum()),
         "nDeployRanked": int(len(dep_e)),
         "nInvestRanked": int(len(inv_e)),
         "excludedStates": ["KY", "PA"],
         "nNoCardCounties": int(no_card.sum()),
         "nDecliningCounties": int(declining.sum()),
+        # pool standardization behind the priority scores, and the national
+        # cut points offered as threshold presets
+        "poolBurdenMean": round(float(P["burden_z"].mean()), 4),
+        "poolBurdenSd": round(float(P["burden_z"].std()), 4),
+        "poolDdiMean": round(float(P["ddi"].mean()), 4),
+        "poolDdiSd": round(float(P["ddi"].std()), 4),
+        **cuts,
     },
     "countyCols": ["fips", "name", "state", "poolReason", "wfTrendPc", "cardLast",
                    "rateFirst", "rateLast", "pop", "cbsa"],
     "counties": county_rows,
     "tractCols": ["fips", "ci", "ddi", "burdenZ", "bucket", "rank", "score",
-                  "ddiPctNat", "burdenPct", "burdenTrend", "bzFirst", "bzLast",
+                  "zb", "zr", "hidden", "ddiPctNat", "burdenPct", "burdenTrend", "bzFirst", "bzLast",
                   "bzDelta", "bSlope", "ddiInfa", "ddiSe", "tier", "risk"],
     "tracts": tract_rows,
 }
