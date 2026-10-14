@@ -1,15 +1,14 @@
 """
 sens_workforce_distance.py
 ==========================
-Additional analysis E: cross-county workforce access within 25 miles.
+Sensitivity: cross-county workforce access within 25 miles.
 
 The main analysis treats county lines as hard walls. Here we assume a patient
 can reach any cardiologist in a county whose population-free geographic
 centroid lies within 25 miles of their own county's centroid (great-circle
 distance between county centroids, computed from the repo's county GeoJSON).
 
-Both pool arms are redefined on the 25-mile aggregate (per user decision
-2026-07-19):
+Both pool arms are redefined on the 25-mile aggregate:
   no access  : zero cardiologists across the 25-mile neighborhood in 2023
   declining  : falling per-capita rate of the aggregated workforce
                (aggregate counts / aggregate population, 2010-2023; same

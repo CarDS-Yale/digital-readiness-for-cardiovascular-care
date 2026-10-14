@@ -76,12 +76,12 @@ def region_of(fips):
 
 
 def fetch_tracts(states):
-    import urllib.request
     feats = []
     for st in states:
         path = os.path.join(GEO_DIR, f"tract_{st}.json")
         if not os.path.exists(path):
             print(f"  downloading tract boundaries for state {st} ...")
-            urllib.request.urlretrieve(TRACT_URL.format(st=st), path)
+            urllib.request.urlretrieve(TRACT_URL.format(st=st), path + ".part")
+            os.replace(path + ".part", path)   # no half-written cache if interrupted
         feats += json.load(open(path))["features"]
     return feats

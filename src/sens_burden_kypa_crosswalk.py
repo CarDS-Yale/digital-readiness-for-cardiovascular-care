@@ -1,20 +1,24 @@
 """
 sens_burden_kypa_crosswalk.py
-=================================
-Decisive tract-level sensitivity check for the KY/PA burden gap.
+=============================
+Tract-level check of the Kentucky and Pennsylvania burden gap.
 
-Builds on sens_burden_kypa: the PLACES 2023 release carries full measures for
-KY and PA but sits on 2010-vintage tracts. This script crosswalks the
+Builds on sens_burden_kypa: the PLACES 2023 release carries all ten measures
+for KY and PA but sits on 2010-vintage tracts. This script crosswalks the
 full-measure burden composite onto 2020 tracts with the Census 2010-2020
 tract relationship file (population-weighted, uniform-density assumption),
-then tests the actual flagship tracts and re-runs the canonical ranking.
+asks how many priority tracts in the two states stay above the national
+mean, looks at the Delaware County deployment cluster tract by tract, and
+re-runs the ranking with the rebuilt burden swapped in.
 
-Run ON THE MAC (needs internet):
-    cd path/to/digital-readiness
-    .venv/bin/python sens_burden_kypa_crosswalk.py
+Needs internet on first run: downloads the Census relationship file (~50 MB).
+Reuses the cached PLACES 2023 pull from sens_burden_kypa.
 
-Downloads the Census relationship file (~50 MB) on first run; reuses the
-cached PLACES 2023 pull from sens_burden_kypa.
+Outputs (outputs/master/)
+  places2023_burden_2020tracts.csv   rebuilt burden on 2020 tracts, all states
+                                     (read again by validate_cross_source.py)
+  burden_kypa_crosswalk_delaware.csv the Delaware County tracts, one row each
+  burden_kypa_crosswalk.md           the numbers reported in the text
 """
 import io
 import os
@@ -28,6 +32,7 @@ OUT = os.path.join(PD_, "outputs", "master")
 CACHE = os.path.join(OUT, "places2023_cv_wide.csv")
 POP_CACHE = os.path.join(OUT, "places2023_population.csv")
 REL_CACHE = os.path.join(OUT, "tract_rel_2010_2020.txt")
+XW_CACHE = os.path.join(OUT, "places2023_burden_2020tracts.csv")
 MASTER = os.path.join(OUT, "tract_master.csv")
 ANCHORS = os.path.join(OUT, "anchors.csv")
 LOG = os.path.join(OUT, "burden_kypa_crosswalk.md")
@@ -130,9 +135,11 @@ def main():
     cov = (den_ok / den_all).fillna(0)
     burden20 = (num / den_ok).where(cov >= 0.5)
     say(f"- 2020-vintage tracts with crosswalked burden: {burden20.notna().sum():,}")
+    (burden20.rename("b23").rename_axis("t20").reset_index()
+     .to_csv(XW_CACHE, index=False))
 
-    # primary data + canonical classification
-    from build_master import matrix_boxes
+    # primary data and the primary classification
+    from build_master import matrix_boxes, corr_with_ci, spearman
     t = pd.read_csv(MASTER, dtype={"fips_tract": str, "fips_county": str})
     t = t.drop_duplicates("fips_tract")
     anchors = pd.read_csv(ANCHORS).iloc[0]
@@ -146,31 +153,35 @@ def main():
     say(f"- Tract-level validity anchor (pool tracts outside KY/PA/FL, "
         f"n = {len(va):,}): primary vs crosswalked full-measure burden "
         f"r = {va['burden_z'].corr(va['b23']):.3f}, "
-        f"rho = {va['burden_z'].corr(va['b23'], method='spearman'):.3f}")
+        f"rho = {spearman(va['burden_z'], va['b23']):.3f}")
 
-    kp = P[P["st"].isin(["21", "42"])].dropna(subset=["b23"]).copy()
+    kp_all = P[P["st"].isin(["21", "42"])]
+    kp = kp_all.dropna(subset=["b23"]).copy()
     kp["hb"] = kp["burden_z"] > 0
     kp["ready"] = kp["ddi"] <= nat
     kp["label"] = np.where(kp["hb"] & kp["ready"], "DEP",
                   np.where(kp["hb"] & ~kp["ready"], "INV", "other"))
-    say(f"- KY/PA pool tracts with crosswalked burden: {len(kp):,}")
+    say(f"- KY/PA pool tracts: {len(kp_all):,}; with crosswalked burden: "
+        f"{len(kp):,} ({len(kp_all) - len(kp)} had no 2010-tract match)")
+    cc = corr_with_ci(kp["burden_z"], kp["b23"])
     say(f"- KY/PA sleep-only vs full-measure burden: "
-        f"r = {kp['burden_z'].corr(kp['b23']):.3f}, "
-        f"rho = {kp['burden_z'].corr(kp['b23'], method='spearman'):.3f}")
+        f"r = {cc['r']:.3f} (95% CI {cc['ci_low']:.3f} to {cc['ci_high']:.3f}, "
+        f"n = {cc['n']:,}), "
+        f"rho = {spearman(kp['burden_z'], kp['b23']):.3f}")
     for lab in ["DEP", "INV"]:
         sub = kp[kp["label"] == lab]
         say(f"- KY/PA {lab} tracts staying high burden (full-measure z > 0): "
             f"{(sub['b23'] > 0).sum():,} of {len(sub):,} "
             f"({(sub['b23'] > 0).mean() * 100:.1f}%)")
 
-    # the flagship 19 Delaware County tracts, individually
+    # the Delaware County, PA deployment cluster, tract by tract
     inv_b, dep_b = matrix_boxes(P, "ddi", nat)
     top25 = dep_b.head(25)
     dela = top25[top25["fips_tract"].str[:5] == "42045"]
-    say(f"\n- Flagship Delaware County tracts in deployment top 25: {len(dela)}")
+    say(f"\n- Delaware County tracts in the unrestricted deployment top 25: {len(dela)}")
     say("| rank | tract | sleep-only burden z | full-measure burden z | stays high burden |")
     say("|---|---|---|---|---|")
-    n_keep = 0
+    n_keep, rows = 0, []
     for rank, (_, r) in enumerate(top25.iterrows(), start=1):
         if r["fips_tract"][:5] != "42045":
             continue
@@ -179,9 +190,16 @@ def main():
         n_keep += 1 if keep == "yes" else 0
         say(f"| {rank} | {r['fips_tract']} | {r['burden_z']:.2f} | "
             f"{b23:.2f} | {keep} |")
-    say(f"- Flagship tracts staying high burden: {n_keep} of {len(dela)}")
+        rows.append({"Rank": rank, "Tract FIPS": r["fips_tract"],
+                     "DDI": round(r["ddi"], 1),
+                     "Single-measure burden z": round(r["burden_z"], 2),
+                     "Full-measure burden z (2023 release)": round(b23, 2),
+                     "Above national mean": keep})
+    say(f"- Delaware County tracts staying high burden: {n_keep} of {len(dela)}")
+    pd.DataFrame(rows).to_csv(os.path.join(OUT, "burden_kypa_crosswalk_delaware.csv"),
+                              index=False)
 
-    # hybrid re-ranking with the canonical machinery
+    # hybrid re-ranking: full-measure burden for KY/PA, primary burden elsewhere
     H = P.copy()
     swap = H["st"].isin(["21", "42"]) & H["b23"].notna()
     H["burden_z"] = np.where(swap, H["b23"], H["burden_z"])

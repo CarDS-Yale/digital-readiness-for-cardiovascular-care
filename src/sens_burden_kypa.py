@@ -39,7 +39,7 @@ URL = "https://data.cdc.gov/resource/hky2-3tpn.csv"
 PAGE = 60000
 
 FOCUS = {
-    "42045": "Delaware, PA (deployment flagship)",
+    "42045": "Delaware, PA (deployment cluster)",
     "42021": "Cambria, PA (investment)",
     "42089": "Monroe, PA (deployment)",
     "21111": "Jefferson, KY (both lists)",
@@ -156,13 +156,13 @@ def main():
 
     if overlap > 0.9 * t["fips_tract"].nunique():
         # same vintage: tract-level hybrid with the canonical ranking
-        from build_master import matrix_boxes
+        from build_master import matrix_boxes, spearman
         P["burden23"] = P["fips_tract"].map(burden23)
         both = P[P["st"].isin(["21", "42"])].dropna(subset=["burden23"])
         say(f"- KY/PA pool tracts with full-measure burden: {len(both):,}")
         say(f"- Correlation sleep-only vs full-measure burden (KY/PA): "
             f"r = {both['burden_z'].corr(both['burden23']):.3f}, "
-            f"rho = {both['burden_z'].corr(both['burden23'], method='spearman'):.3f}")
+            f"rho = {spearman(both['burden_z'], both['burden23']):.3f}")
         for lab in ["DEP", "INV"]:
             sub = both[both["label"] == lab]
             say(f"- KY/PA {lab} staying high burden: {(sub['burden23'] > 0).sum():,} "

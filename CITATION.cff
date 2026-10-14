@@ -6,11 +6,12 @@ abstract: >-
   supply and digital readiness at the census-tract level, and classifying
   high-burden tracts in workforce-constrained counties into deployment-priority
   and investment-priority groups. Includes the full pipeline from public source
-  files through the classification, ten sensitivity analyses, manuscript tables
-  and figures, and the source for two accompanying browser dashboards.
+  files through the classification, the urban-rural and care-access analyses,
+  cross-source validation, nine sensitivity analyses, tables and figures, and the
+  source for two accompanying browser dashboards.
 type: software
-version: 1.0.0
-date-released: "2026-09-11"
+version: 1.1.0
+date-released: "2026-10-12"
 license: MIT
 repository-code: https://github.com/CarDS-Yale/digital-readiness-for-cardiovascular-care
 url: https://digital-readiness.cards-lab.org/

@@ -1,7 +1,7 @@
 """
 sens_readiness_subscores.py
 =========================
-Additional analysis B: rerun the classification with the DDI's two
+Sensitivity: rerun the classification with the DDI's two
 SUB-SCORES as the readiness axis, one at a time.
 
   INFA : infrastructure/adoption sub-score (broadband, devices, speeds)

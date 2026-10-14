@@ -1,9 +1,8 @@
 """
 make_figure3.py
 ===============
-Figure 3, replacement design: a national map of EVERY priority tract rather
-than the top-10 county display (which was arbitrary and duplicated Tables
-S1a,b).
+Figure 3: a national map of every priority tract, plus the population they
+hold.
 
 Red = investment priority, blue = deployment priority, using the same colors
 as Figures 2 and 4. Kentucky and Pennsylvania tracts are shown, because they
@@ -11,9 +10,16 @@ retain box membership; only the ranked lists excluded them.
 
 Deployment tracts are urban and therefore small in area, so they are drawn
 last and carry a same-color edge, which keeps dense metro clusters legible
-against the much larger rural investment polygons.
+against the much larger rural investment polygons. Because the map shows
+area rather than people, the script also reports each group's share of the
+land area of the contiguous states and its share of rural tracts, which the
+figure legend quotes.
 
-Outputs: outputs/figure3/ (combined map and the three-panel version)
+Outputs (outputs/figure3/)
+  figure3_priority_tracts.png         combined national map
+  figure3_priority_tracts_panels.png  panels a and b (one group each) and
+                                      panel c (the population bar)
+  figure3_land_area.csv               land-area and rural-tract shares
 """
 import json
 import os
@@ -24,7 +30,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
-from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 import glob
@@ -47,17 +52,16 @@ BASE_FILL, BASE_EDGE = "#f2f3f5", "white"
 
 
 def state_features(st):
-    """Tract features for one state; cached files are reused, temps removed."""
+    """Tract features for one state, downloaded once and cached under tract_geo/."""
     cached = os.path.join(GEO_DIR, f"tract_{st}.json")
     if os.path.exists(cached):
         with open(cached) as fh:
             return json.load(fh)["features"], False
-    tmp = os.path.join("/tmp", f"_tract_{st}.json")
-    urllib.request.urlretrieve(TRACT_URL.format(st=st), tmp)
-    with open(tmp) as fh:
-        feats = json.load(fh)["features"]
-    os.remove(tmp)
-    return feats, True
+    # download to a temporary name so an interrupted run leaves no bad cache
+    urllib.request.urlretrieve(TRACT_URL.format(st=st), cached + ".part")
+    os.replace(cached + ".part", cached)
+    with open(cached) as fh:
+        return json.load(fh)["features"], True
 
 
 def rings_of(geom, step):
@@ -218,6 +222,37 @@ def population_ribbon(ax, p_inv, p_dep, p_us):
     ax.axis("off")
 
 
+def land_area_shares(label_of):
+    """Share of contiguous-US land area covered by each priority group.
+
+    Sums the Census ALAND field over every tract in the 48 states and DC,
+    then over the tracts in each group. Reads the cached state files, so it
+    is cheap once collect() has run.
+    """
+    total, by_label = 0.0, {"INV": 0.0, "DEP": 0.0}
+    for st in STATES:
+        if st in ("02", "15"):
+            continue
+        feats, _ = state_features(st)
+        for ft in feats:
+            a = float(ft["properties"].get("ALAND") or 0.0)
+            total += a
+            lab = label_of.get(ft["properties"]["GEOID"])
+            if lab:
+                by_label[lab] += a
+    return {k: 100 * v / total for k, v in by_label.items()}
+
+
+def rural_tract_shares(inv, dep):
+    """Share of each group's tracts that are rural under the 2020 Census (<50% urban)."""
+    f = os.path.join(PD_, "GEO", "census2020_tract_urban_rural.csv")
+    if not os.path.exists(f):
+        return {}
+    t = pd.read_csv(f, dtype={"GEOID": str})
+    rural = set(t.loc[t["urban_flag"].eq("Rural"), "GEOID"].str.zfill(11))
+    return {k: 100 * d["fips_tract"].isin(rural).mean() for k, d in (("INV", inv), ("DEP", dep))}
+
+
 HANDLES = [Patch(facecolor=INV, label="Investment priority"),
            Patch(facecolor=DEP, label="Deployment priority")]
 
@@ -283,6 +318,17 @@ def main():
 
     out2 = os.path.join(OUT, "figure3_priority_tracts_panels.png")
     fig.savefig(out2, dpi=DPI); plt.close(fig); print("->", out2)
+
+    # ── the numbers the legend quotes ───────────────────────────────────────
+    area = land_area_shares(label_of)
+    rural = rural_tract_shares(inv, dep)
+    rows = [{"group": g, "tracts": n, "residents": p, "pct_us_population": 100 * p / p_us,
+             "pct_contiguous_us_land_area": area[k], "pct_rural_tracts": rural.get(k)}
+            for g, k, n, p in (("Investment priority", "INV", len(inv), p_inv),
+                               ("Deployment priority", "DEP", len(dep), p_dep))]
+    summary = pd.DataFrame(rows)
+    summary.to_csv(os.path.join(OUT, "figure3_land_area.csv"), index=False)
+    print(summary.round(1).to_string(index=False))
 
 
 if __name__ == "__main__":

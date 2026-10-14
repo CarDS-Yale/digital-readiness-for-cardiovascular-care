@@ -1,7 +1,7 @@
 """
 sens_workforce_primary_care.py
 =============================
-Additional analysis C2: rebuild the high-need county pool with OTHER
+Sensitivity: rebuild the high-need county pool with OTHER
 workforces from AHRF, then rerun the classification.
 
 Workforces (county counts)

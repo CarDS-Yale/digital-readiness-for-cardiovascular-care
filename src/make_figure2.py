@@ -12,7 +12,7 @@ label.
 Kentucky and Pennsylvania are dropped from both the ranked circles and the
 background cloud, since their burden rests on a single measure.
 
-Output: outputs/fig2_v7/
+Output: outputs/figure2/
 """
 import os
 import numpy as np
@@ -66,6 +66,9 @@ def main():
     # (short sleep), so it is not comparable on the 10-measure burden axis
     st_bg = P["fips_tract"].astype(str).str.zfill(11).str[:2]
     Pbg = P[~st_bg.isin(RANK_EXCLUDE_STATES)]
+    print(f"background: {len(Pbg):,} of {len(P):,} pool tracts "
+          f"({len(P) - len(Pbg):,} in KY/PA left out); ranked groups: "
+          f"{len(inv):,} investment, {len(dep):,} deployment")
 
     fig, a = plt.subplots(figsize=(10, 7.0))
     a.scatter(Pbg["ddi"], Pbg["burden_z"], s=5, c="#b6bbc2", alpha=.55,

@@ -1,30 +1,38 @@
 """
 make_tables.py
-=================
-Manuscript tables, written as CSVs to outputs/tables/.
+==============
+Ranked tract lists and the threshold grid, written as CSVs to outputs/tables/
+and numbered as in the supplement.
 
-  table_1A  top 25 investment tracts, primary analysis
-  table_1B  top 25 deployment tracts, primary analysis
-  table_2   top 25 per group, readiness = raw components (ACS-6 + FCC)
-  table_3A  top 25 per group, readiness = INFA sub-score only
-  table_3B  top 25 per group, readiness = SE sub-score only
-  table_4   top 25 per group, all US tracts (no workforce screen)
-  table_5   top 25 per group, primary care physician workforce pool
-  table_6   threshold grid (3x3 national cutoffs)
-  table_7   top 25 per group, 25-mile cross-county workforce access
-  table_8   top 25 per group, composite cardiologist + cardiology NP/PA pool
+  S1, S2      top 25 investment and deployment tracts, primary analysis
+  S9, S10     readiness rebuilt from six ACS indicators plus FCC availability
+  S11, S12    readiness = infrastructure/adoption subscore alone
+  S13, S14    readiness = socioeconomic subscore alone
+  S15, S16    workforce = cardiologists plus cardiology NPs and PAs
+  S17, S18    workforce = cardiologists and endocrinologists (joint absence)
+  S19, S20    workforce pool rebuilt on primary care physicians
+  S21, S22    all tracts, no workforce screen
+  S23, S24    25-mile cross-county workforce access
+  S25         the 3 x 3 grid of burden and readiness cutoffs
 
-Per user decisions 2026-07-20: top 25 for BOTH groups in every variant
-table; the NP/PA profession-total variation gets no table. Requires the
-the cached master table, the primary-care county panel, the 25-mile
-access table and the CMS county counts and the ACS/FCC component files.
+Odd numbers are investment lists, even numbers deployment lists, 25 rows
+each. Every ranked list drops Kentucky and Pennsylvania (single-measure
+burden). Variant lists flag whether each tract also sits in the primary
+top 25.
+
+Needs the master cache, the ACS and FCC component files, and the county
+tables cached by sens_thresholds, sens_workforce_primary_care,
+sens_workforce_distance, process_clinicians and sens_workforce_endocrinology.
 """
-import os, glob
+import os
+
 import numpy as np
 import pandas as pd
 
-from build_master import (load_master, matrix_boxes, rank_eligible,
-                              OUT_DIR as MASTER_DIR, PROJECT_DIR)
+from build_master import (load_master, matrix_boxes, rank_eligible, acs_components,
+                          fcc_availability, OUT_DIR as MASTER_DIR, PROJECT_DIR)
+from sens_workforce_primary_care import pool_from_panel, PANEL_FILE
+from sens_workforce_distance import ACCESS_FILE
 
 OUT = os.path.join(PROJECT_DIR, "outputs", "tables")
 os.makedirs(OUT, exist_ok=True)
@@ -42,11 +50,12 @@ def split_county(cs):
 
 
 def base_cols(df):
-    d = df.copy()
-    cty = d["county_state"].map(lambda s: split_county(s))
+    d = df.head(N).copy()
+    cty = d["county_state"].map(split_county)
     d["County"] = [c[0] for c in cty]
     d["State"] = [c[1] for c in cty]
     d["Tract FIPS"] = d["fips_tract"].astype(str).str.zfill(11)
+    d["Rank"] = range(1, len(d) + 1)
     return d
 
 
@@ -55,21 +64,25 @@ def save(name, df):
     print(f"  {name}: {len(df)} rows")
 
 
+def need(path, script):
+    if not os.path.exists(path):
+        raise SystemExit(f"{os.path.basename(path)} missing. Run {script} first.")
+    return path
+
+
 def main():
     tracts, anchors = load_master()
     nat = anchors["nat_med_ddi"]
     P = (tracts[tracts["in_pool"]]
          .dropna(subset=["burden_z", "ddi"]).drop_duplicates("fips_tract"))
     inv0, dep0 = matrix_boxes(P, "ddi", nat)
-    # ranked national lists exclude single-measure-burden states (KY/PA)
     inv0e, dep0e = rank_eligible(inv0), rank_eligible(dep0)
-    prim25 = {"Invest": set(inv0e["fips_tract"].head(N)),
-              "Deploy": set(dep0e["fips_tract"].head(N))}
+    prim25 = {"inv": set(inv0e["fips_tract"].head(N)),
+              "dep": set(dep0e["fips_tract"].head(N))}
 
-    # ── Tables 1A / 1B ──────────────────────────────────────────────────────
+    # ── S1, S2: the primary lists ───────────────────────────────────────────
     def primary_table(df):
-        d = base_cols(df.head(N))
-        d["Rank"] = range(1, len(d) + 1)
+        d = base_cols(df)
         out = d[["Rank", "County", "State", "Tract FIPS"]].copy()
         out["DDI (composite)"] = d["ddi"].round(1)
         out["DDI INFA"] = d["infa"].round(1)
@@ -77,110 +90,58 @@ def main():
         out["Cardiologists per 100,000"] = d["card_per_100k_last"].round(2)
         out["Burden z score"] = d["burden_z"].round(2)
         return out
-    save("table_1A", primary_table(inv0e))
-    save("table_1B", primary_table(dep0e))
+    save("table_S1_investment_primary", primary_table(inv0e))
+    save("table_S2_deployment_primary", primary_table(dep0e))
 
-    # generic variant table: both groups stacked, top 25 each
-    def variant_table(inv, dep, extra=None, flag_primary=True, flag_pool=False):
-        rows = []
-        for grp, df in [("Invest", rank_eligible(inv)),
-                        ("Deploy", rank_eligible(dep))]:
-            d = base_cols(df.head(N))
-            d["Rank"] = range(1, len(d) + 1)
-            out = d[["Rank", "County", "State", "Tract FIPS"]].copy()
-            out.insert(0, "Group", grp)
-            if extra:
-                for col_label, src, nd in extra:
-                    out[col_label] = d[src].round(nd)
-            out["DDI (composite)"] = d["ddi"].round(1)
-            out["Burden z score"] = d["burden_z"].round(2)
-            if flag_pool:
-                out["In workforce-constrained pool"] = np.where(d["in_pool"].astype(bool), "Yes", "No")
-            if flag_primary:
-                out["In primary top 25"] = np.where(
-                    d["fips_tract"].isin(prim25[grp]), "Yes", "No")
-            rows.append(out)
-        return pd.concat(rows, ignore_index=True)
+    # one variant list, either group
+    def variant_table(df, group, extra=None, flag_pool=False):
+        d = base_cols(rank_eligible(df))
+        out = d[["Rank", "County", "State", "Tract FIPS"]].copy()
+        if extra:
+            for col_label, src, nd in extra:
+                out[col_label] = d[src].round(nd)
+        out["DDI (composite)"] = d["ddi"].round(1)
+        out["Burden z score"] = d["burden_z"].round(2)
+        if flag_pool:
+            out["In workforce-constrained pool"] = np.where(
+                d["in_pool"].astype(bool), "Yes", "No")
+        else:
+            out["In primary top 25"] = np.where(
+                d["fips_tract"].isin(prim25[group]), "Yes", "No")
+        return out
 
-    # ── Table 2: raw components ─────────────────────────────────────────────
-    acs = pd.read_csv(sorted(glob.glob(os.path.join(
-        PROJECT_DIR, "ACS", "acs5_*_tract_ddi_components.csv")))[-1],
-        dtype={"GEOID": str})
-    fcc = pd.read_csv(sorted(glob.glob(os.path.join(
-        PROJECT_DIR, "FCC", "fcc_*_tract_availability.csv")))[-1],
-        dtype={"GEOID": str})[["GEOID", "terr_unserved_pct"]]
-    comp = acs.merge(fcc, on="GEOID", how="inner")
+    def save_pair(n_inv, n_dep, tag, inv, dep, **kw):
+        save(f"table_S{n_inv}_investment_{tag}", variant_table(inv, "inv", **kw))
+        save(f"table_S{n_dep}_deployment_{tag}", variant_table(dep, "dep", **kw))
+
+    # ── S9, S10: readiness from raw components ──────────────────────────────
+    comp = acs_components().merge(fcc_availability()[["GEOID", "terr_unserved_pct"]],
+                                  on="GEOID", how="inner")
     cols = ACS_COMPS + ["terr_unserved_pct"]
     a = comp.dropna(subset=cols).copy()
     z = (a[cols] - a[cols].mean()) / a[cols].std()
     a["cidx"] = z.mean(axis=1)
-    med = float(a["cidx"].median())
-    Pv = P.merge(a[["GEOID", "cidx"]], left_on="fips_tract",
-                 right_on="GEOID", how="left")
-    inv_c, dep_c = matrix_boxes(Pv, "cidx", med)
-    save("table_2", variant_table(
-        inv_c, dep_c, extra=[("Components index (z)", "cidx", 2)]))
+    Pv = P.merge(a[["GEOID", "cidx"]], left_on="fips_tract", right_on="GEOID", how="left")
+    inv_c, dep_c = matrix_boxes(Pv, "cidx", float(a["cidx"].median()))
+    save_pair(9, 10, "readiness_components", inv_c, dep_c,
+              extra=[("Components index (z)", "cidx", 2)])
 
-    # ── Tables 3A / 3B: sub-scores ──────────────────────────────────────────
+    # ── S11 to S14: subscores ───────────────────────────────────────────────
     inv_i, dep_i = matrix_boxes(P, "infa", anchors["nat_med_infa"])
-    save("table_3A", variant_table(inv_i, dep_i, extra=[("INFA score", "infa", 1)]))
+    save_pair(11, 12, "readiness_infa", inv_i, dep_i, extra=[("INFA score", "infa", 1)])
     inv_s, dep_s = matrix_boxes(P, "se", anchors["nat_med_se"])
-    save("table_3B", variant_table(inv_s, dep_s, extra=[("SE score", "se", 1)]))
+    save_pair(13, 14, "readiness_se", inv_s, dep_s, extra=[("SE score", "se", 1)])
 
-    # ── Table 4: all tracts ─────────────────────────────────────────────────
-    inv_a, dep_a = matrix_boxes(tracts, "ddi", nat)
-    save("table_4", variant_table(inv_a, dep_a,
-                                  flag_primary=False, flag_pool=True))
-
-    # ── Table 5: PCP workforce pool ─────────────────────────────────────────
-    import importlib.util
-    spec = importlib.util.spec_from_file_location(
-        "primary_care", os.path.join(PROJECT_DIR, "sens_workforce_primary_care.py"))
-    primary_care = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(primary_care)
-    panel = pd.read_csv(primary_care.PANEL_FILE, dtype={"fips_st_cnty": str})
-    cp = primary_care.pool_from_panel(panel, "PCP")
-    pool_pcp = set(cp.loc[cp["in_pool"], "fips_st_cnty"])
-    Pp = tracts[tracts["fips_county"].isin(pool_pcp)]
-    inv_p, dep_p = matrix_boxes(Pp, "ddi", nat)
-    save("table_5", variant_table(inv_p, dep_p))
-
-    # ── Table 6: threshold grid ─────────────────────────────────────────────
-    g = pd.read_csv(os.path.join(MASTER_DIR, "thresholds_grid.csv"))
-    lab_b = {"mean": "Above mean (z > 0)", "p75": "Top 25% (z >= 0.43)",
-             "p90": "Top 10% (z >= 0.91)"}
-    lab_r = {"median": "Median split (18.8)",
-             "p25_p75": "Quartile split (14.2 / 24.2)",
-             "p10_p90": "Decile split (10.9 / 29.8)"}
-    t6 = pd.DataFrame({
-        "Burden cutoff": g["burden_cut"].map(lab_b),
-        "Readiness cutoff": g["ready_cut"].map(lab_r),
-        "Investment tracts": g["n_invest"].map("{:,}".format),
-        "Deployment tracts": g["n_deploy"].map("{:,}".format),
-        "Primary top-10 investment retained": g["base_inv_top10_surviving"].map(lambda x: f"{x}/10"),
-        "Primary top-10 deployment retained": g["base_dep_top10_surviving"].map(lambda x: f"{x}/10"),
-    })
-    save("table_6", t6)
-
-    # ── Table 7: 25-mile access pool ────────────────────────────────────────
-    acc = pd.read_csv(os.path.join(MASTER_DIR, "workforce_distance_county_access.csv"),
-                      dtype={"fips_st_cnty": str})
-    pool_25 = set(acc.loc[acc["in_pool_25mi"], "fips_st_cnty"])
-    P25 = tracts[tracts["fips_county"].isin(pool_25)]
-    inv_f, dep_f = matrix_boxes(P25, "ddi", nat)
-    save("table_7", variant_table(inv_f, dep_f))
-
-    # ── Table 8: composite cardiologist + cardiology APP pool ───────────────
-    app = pd.read_csv(os.path.join(MASTER_DIR, "dac_cardiology_app_county.csv"),
-                      dtype={"fips_st_cnty": str})
+    # ── S15, S16: cardiologists plus cardiology NPs and PAs ─────────────────
+    app = pd.read_csv(need(os.path.join(MASTER_DIR, "dac_cardiology_app_county.csv"),
+                           "process_clinicians.py"), dtype={"fips_st_cnty": str})
     app["fips_st_cnty"] = app["fips_st_cnty"].str.zfill(5)
     cnty = (tracts.drop_duplicates("fips_county")
             [["fips_county", "card_last", "pool_declining"]]
             .merge(app, left_on="fips_county", right_on="fips_st_cnty", how="left"))
     cnty["n_app_site_strict"] = cnty["n_app_site_strict"].fillna(0)
-    # counties with no AHRF workforce record (the 9 Connecticut planning
-    # regions) cannot enter the pool, matching the primary definition;
-    # without this, missing counts read as zero supply
+    # counties with no AHRF record (the Connecticut planning regions) cannot
+    # enter the pool; without this guard a missing count would read as zero
     has_wf = cnty["card_last"].notna()
     pool_g = set(cnty.loc[has_wf & (
         ((cnty["card_last"].fillna(0) + cnty["n_app_site_strict"]) == 0)
@@ -189,8 +150,60 @@ def main():
     app_n = dict(zip(cnty["fips_county"], cnty["n_app_site_strict"].astype(int)))
     Pg["n_card_app"] = Pg["fips_county"].map(app_n).fillna(0).astype(int)
     inv_g, dep_g = matrix_boxes(Pg, "ddi", nat)
-    save("table_8", variant_table(
-        inv_g, dep_g, extra=[("Cardiology NP/PA in county", "n_card_app", 0)]))
+    save_pair(15, 16, "workforce_advanced_practice", inv_g, dep_g,
+              extra=[("Cardiology NP/PA in county", "n_card_app", 0)])
+
+    # ── S17, S18: cardiologists and endocrinologists ────────────────────────
+    endo = pd.read_csv(need(os.path.join(MASTER_DIR, "workforce_endocrinology_county.csv"),
+                            "sens_workforce_endocrinology.py"), dtype={"fips_county": str})
+    endo["fips_county"] = endo["fips_county"].str.zfill(5)
+    pool_e = set(endo.loc[endo["pool_joint_absence"].astype(bool), "fips_county"])
+    Pe = tracts[tracts["fips_county"].isin(pool_e)].copy()
+    Pe["n_endo"] = Pe["fips_county"].map(dict(zip(endo["fips_county"], endo["n_endo"])))
+    inv_e, dep_e = matrix_boxes(Pe, "ddi", nat)
+    save_pair(17, 18, "workforce_endocrinology", inv_e, dep_e,
+              extra=[("Endocrinologists in county", "n_endo", 0)])
+
+    # ── S19, S20: primary care pool ─────────────────────────────────────────
+    panel = pd.read_csv(need(PANEL_FILE, "sens_workforce_primary_care.py"),
+                        dtype={"fips_st_cnty": str})
+    cp = pool_from_panel(panel, "PCP")
+    pool_pcp = set(cp.loc[cp["in_pool"], "fips_st_cnty"].astype(str).str.zfill(5))
+    inv_p, dep_p = matrix_boxes(tracts[tracts["fips_county"].isin(pool_pcp)], "ddi", nat)
+    save_pair(19, 20, "workforce_primary_care", inv_p, dep_p)
+
+    # ── S21, S22: all tracts ────────────────────────────────────────────────
+    inv_a, dep_a = matrix_boxes(tracts, "ddi", nat)
+    save_pair(21, 22, "all_tracts", inv_a, dep_a, flag_pool=True)
+
+    # ── S23, S24: 25-mile access pool ───────────────────────────────────────
+    acc = pd.read_csv(need(ACCESS_FILE, "sens_workforce_distance.py"),
+                      dtype={"fips_st_cnty": str})
+    pool_25 = set(acc.loc[acc["in_pool_25mi"], "fips_st_cnty"].str.zfill(5))
+    inv_f, dep_f = matrix_boxes(tracts[tracts["fips_county"].isin(pool_25)], "ddi", nat)
+    save_pair(23, 24, "workforce_distance", inv_f, dep_f)
+
+    # ── S25: threshold grid ─────────────────────────────────────────────────
+    g = pd.read_csv(need(os.path.join(MASTER_DIR, "thresholds_grid.csv"), "sens_thresholds.py"))
+    allt = tracts.dropna(subset=["burden_z", "ddi"]).drop_duplicates("fips_tract")
+    bq, dq = allt["burden_z"].quantile, allt["ddi"].quantile
+    lab_b = {"mean": "Above mean (z > 0)",
+             "p75": f"Top 25% (z >= {bq(.75):.2f})",
+             "p90": f"Top 10% (z >= {bq(.90):.2f})"}
+    lab_r = {"median": f"Median split ({dq(.5):.1f})",
+             "p25_p75": f"Quartile split ({dq(.25):.1f} / {dq(.75):.1f})",
+             "p10_p90": f"Decile split ({dq(.10):.1f} / {dq(.90):.1f})"}
+    t25 = pd.DataFrame({
+        "Burden cutoff": g["burden_cut"].map(lab_b),
+        "Readiness cutoff": g["ready_cut"].map(lab_r),
+        "Investment tracts": g["n_invest"].map("{:,}".format),
+        "Deployment tracts": g["n_deploy"].map("{:,}".format),
+        "Primary top-10 investment retained":
+            g["base_inv_top10_surviving"].map(lambda x: f"{x}/10"),
+        "Primary top-10 deployment retained":
+            g["base_dep_top10_surviving"].map(lambda x: f"{x}/10"),
+    })
+    save("table_S25_threshold_grid", t25)
 
     print(f"\nall tables -> {OUT}")
 

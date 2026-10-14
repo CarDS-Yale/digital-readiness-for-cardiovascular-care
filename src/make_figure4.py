@@ -1,8 +1,9 @@
 """
-Figure 4: neighborhood-level variation across five metropolitan areas.
+Figure 4 and Figure S1: neighborhood-level variation across metropolitan areas.
 
-Chicago, Dallas-Fort Worth, Washington, Boston and Philadelphia, each drawn as
-the county containing the city center plus its neighbors. Saturated red and blue
+Chicago and Philadelphia form Figure 4 (panels a and b); Dallas-Fort Worth,
+Washington and Boston form Figure S1 (panels a to c). Each is drawn as the
+county containing the city center plus its neighbors. Saturated red and blue
 mark investment- and deployment-priority tracts. Every other tract with data
 carries a light tint by which side of the national median its readiness falls
 on, so the background keeps its structure instead of flattening to gray.
@@ -39,18 +40,18 @@ METROS = {
         (-87.6298, 41.8781),
         "17031", ["17031", "17043", "17097", "17197", "17089", "17111",
                   "17093", "18089", "18127"], ["17", "18"]),
-    "figure4b_dallas": ("Dallas-Fort Worth Metro", "Dallas County", "Dallas",
+    "figureS1a_dallas": ("Dallas-Fort Worth Metro", "Dallas County", "Dallas",
         (-96.7970, 32.7767),
         "48113", ["48113", "48439", "48085", "48121", "48397", "48139",
                   "48257", "48251"], ["48"]),
-    "figure4c_washington_dc": ("Washington DC Metro", "The District of Columbia",
+    "figureS1b_washington_dc": ("Washington DC Metro", "The District of Columbia",
         "Washington DC", (-77.0369, 38.9072),
         "11001", ["11001", "24031", "24033", "51013", "51510", "51059",
                   "51600", "51610", "51107", "51153"], ["11", "24", "51"]),
-    "figure4d_boston": ("Boston Metro", "Suffolk County", "Boston",
+    "figureS1c_boston": ("Boston Metro", "Suffolk County", "Boston",
         (-71.0589, 42.3601),
         "25025", ["25025", "25017", "25021", "25009", "25023"], ["25"]),
-    "figure4e_philadelphia": ("Philadelphia Metro", "Philadelphia County",
+    "figure4b_philadelphia": ("Philadelphia Metro", "Philadelphia County",
         "Philadelphia", (-75.1652, 39.9526),
         "42101", ["42101", "42045", "42091", "42017", "42029",
                   "34007", "34005", "34015", "10003"], ["42", "34", "10"]),

@@ -1,10 +1,10 @@
 """
 sens_thresholds.py
 ==========================
-Additional analysis D: stricter targeting thresholds.
+Sensitivity: stricter classification thresholds.
 
 The main analysis anchors at "above national-average burden" and "national
-median DDI". A reviewer may ask how the target lists change when we demand
+median DDI". This script asks how the lists change when we demand
 the top 25% or top 10% along either axis. All cutoffs are NATIONAL
 percentiles over all US tracts.
 

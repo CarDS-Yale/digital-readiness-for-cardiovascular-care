@@ -13,8 +13,8 @@ Outputs (outputs/master/)
 import os, glob
 import pandas as pd
 
-from build_master import (load_master, matrix_boxes, compare_runs,
-                              tidy, OUT_DIR, PROJECT_DIR)
+from build_master import (load_master, matrix_boxes, compare_runs, corr_with_ci,
+                          tidy, OUT_DIR, PROJECT_DIR)
 
 ACS_COMPS = ["no_internet_pct", "no_computer_pct", "poverty_pct",
              "disability_pct", "age_65plus_pct", "lt_highschool_pct"]
@@ -53,16 +53,19 @@ def main():
     for name, (idx, med) in variants.items():
         Pv = P.merge(idx, left_on="fips_tract", right_on="GEOID", how="left")
         mm = Pv.dropna(subset=["ddi", "cidx"])
-        r = mm["ddi"].corr(mm["cidx"])
+        cc = corr_with_ci(mm["ddi"], mm["cidx"])
+        r = cc["r"]
         rho = mm["ddi"].rank().corr(mm["cidx"].rank())
         inv_c, dep_c = matrix_boxes(Pv, "cidx", med)
         cmp_ = compare_runs(Pv.dropna(subset=["ddi", "cidx"]),
                             inv_ref, dep_ref, inv_c, dep_c)
-        row = {"variant": name, "pearson_r": round(r, 3),
-               "spearman_rho": round(rho, 3),
+        row = {"variant": name, "pearson_r": r,
+               "pearson_ci_low": cc["ci_low"], "pearson_ci_high": cc["ci_high"],
+               "n_tracts": cc["n"], "spearman_rho": round(rho, 3),
                "coverage_pct": round(Pv["cidx"].notna().mean() * 100, 1), **cmp_}
         rows.append(row)
-        print(f"\n[{name}] r={r:.3f} rho={rho:.3f} "
+        print(f"\n[{name}] r={r:.3f} (95% CI {cc['ci_low']:.3f} to {cc['ci_high']:.3f}, "
+              f"n={cc['n']:,}) rho={rho:.3f} "
               f"agree={cmp_['box_agree_pct']}% "
               f"(INVEST {cmp_['invest_retained_pct']}%, DEPLOY {cmp_['deploy_retained_pct']}%)")
         tidy(inv_c).head(TOP_N).to_csv(

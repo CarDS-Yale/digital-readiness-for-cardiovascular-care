@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
 make_table1.py
-============================
-Group-level ("Table 1") characteristics of the 2x2 priority framework, to
-replace top-25 ranges as the description of the groups.
+==============
+Group-level ("Table 1") characteristics of the 2x2 priority framework.
 
 For each cell of the matrix within the workforce-constrained pool:
     tracts, residents represented, median tract population,
@@ -16,20 +15,14 @@ Weights default to ACS 5-year total tract population (the DDI's own source).
 Set WEIGHT_SOURCE = "census2020" to weight by decennial population instead;
 the two are reported side by side in the console for comparison.
 
-Outputs -> outputs/table1_group_summary/
+Outputs -> outputs/table1/
     table1_group_summary.csv     one row per characteristic, one column per group
-    table1_group_summary.md      same, markdown, ready to paste
+    table1_group_summary.md      same, markdown
     table1_urban_rural_long.csv  full NCHS composition (tracts and residents)
 
-Requires only pandas and numpy, both already in the project venv.
-
-RUN
-    cd path/to/digital-readiness
-    .venv/bin/python fetch_urban_rural.py      # once, for urban/rural
-    .venv/bin/python make_table1.py
-
-Urban/rural rows are skipped with a warning if GEO/ files are absent, so this
-runs before the fetch if you just want the population and IQR rows.
+Run fetch_urban_rural.py once beforehand. Urban/rural rows are skipped with a
+warning if the GEO/ files are absent, so the population and IQR rows can be
+produced without them.
 """
 import glob
 import os

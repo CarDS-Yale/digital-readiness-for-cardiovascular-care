@@ -1,12 +1,12 @@
 """
 sens_workforce_advanced_practice.py
 ==============================
-Additional analysis G: fold CARDIOLOGY-SPECIFIC NPs and PAs into the
+Sensitivity: fold CARDIOLOGY-SPECIFIC NPs and PAs into the
 workforce picture, using the county counts built by process_clinicians.py
 (DAC group-affiliation method; site_strict = cardiology-majority
 practice site, primary; site_any / site_wtd as sensitivity).
 
-Runs (per user decisions 2026-07-19: strict primary, broad sensitivity,
+Runs (strict primary, broad sensitivity,
 composite counts APP heads 1:1, point-in-time)
 
   1. GAP-FILL CHECK   How many no-cardiologist counties have a cardiology

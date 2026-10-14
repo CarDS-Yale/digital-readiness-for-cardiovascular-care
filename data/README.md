@@ -20,7 +20,7 @@ digital-readiness/
 
 ## Sources
 
-**Cardiology workforce** — HRSA Area Health Resources Files.
+**Cardiology workforce**: HRSA Area Health Resources Files.
 https://data.hrsa.gov/data/download
 
 Each AHRF release carries only two years of the non-federal cardiovascular disease
@@ -28,7 +28,7 @@ physician count, so the 2010–2023 panel is assembled from four releases: the
 2020–2021 ASCII file (2010, 2015, 2019), then the 2022–2023, 2023–2024 and 2024–2025
 CSV releases. `fetch_workforce.py` documents the field names and expected filenames.
 
-**Cardiometabolic burden** — CDC PLACES, census tract release, 2025.
+**Cardiometabolic burden**: CDC PLACES, census tract release, 2025.
 https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-Census-Tract-D/cwsq-ngmh
 
 Ten measures are used: hypertension, high cholesterol, coronary heart disease, stroke,
@@ -42,50 +42,59 @@ carries it forward from 2022. Drop the tract-level CSV into `CDC Places/`; the s
 detects tract files by the width of the LocationID column, and ignores county files
 whenever a tract file is present.
 
-**Cardiometabolic burden, Kentucky and Pennsylvania** — CDC PLACES, census tract
+**Cardiometabolic burden, Kentucky and Pennsylvania**: CDC PLACES, census tract
 release, 2023. https://data.cdc.gov/resource/hky2-3tpn.csv
 
 CDC suppressed 9 of the 10 measures for these two states in the 2025 release. The 2023
 release is the most recent one in which both states reported all ten, so
 `sens_burden_kypa.py` and `sens_burden_kypa_crosswalk.py` rebuild their burden from it.
+The crosswalked composite is cached for every state and reused by
+`validate_cross_source.py` as an alternative burden vintage.
 Both scripts pull the file over the Socrata API and cache it under `outputs/master/`; no
 manual download is needed.
 
-**Census tract relationship file, 2010 to 2020** — US Census Bureau.
+**Census tract relationship file, 2010 to 2020**: US Census Bureau.
 https://www2.census.gov/geo/docs/maps-data/data/rel2020/tract/tab20_tract20_tract10_natl.txt
 
 The 2023 PLACES release is published on 2010 tract boundaries, so
 `sens_burden_kypa_crosswalk.py` uses this file to carry those estimates onto 2020
 tracts. It downloads and caches the file automatically (~50 MB).
 
-**Digital readiness** — Purdue Center for Regional Development Digital Divide Index.
+**Digital readiness**: Purdue Center for Regional Development Digital Divide Index.
 https://pcrd.purdue.edu/ddi
 
-Available at no cost on request. The workbook holds several vintages as separate sheets.
-The primary analysis reads the 2022 tract sheet; `sens_readiness_vintage.py` re-runs the
-classification on 2024.
+Available at no cost on request. The workbook holds several vintages as separate sheets;
+the analysis reads the 2022 tract sheet.
 
-**ACS indicators** — Census Bureau API, 5-year estimates.
+**ACS indicators**: Census Bureau API, 5-year estimates.
 https://api.census.gov/data
 
-Used for the raw-component sensitivity analysis and for tract population weights. A free
-API key raises the rate limit: https://api.census.gov/data/key_signup.html
+Used for the raw-component sensitivity analysis, the urban-rural barrier profile, the
+readiness gradient check and tract population weights. A free API key raises the rate
+limit: https://api.census.gov/data/key_signup.html
 
-**Broadband availability** — FCC Broadband Data Collection, served and unserved location
+**Broadband availability**: FCC Broadband Data Collection, served and unserved location
 files. https://broadbandmap.fcc.gov/data-download
 
 The analysis uses terrestrial service at 100/20 Mbps, vintage 31 December 2024. Satellite
 is excluded because it covers nearly everywhere and would erase the signal. Set
 `FCC_VINTAGE` to use a different as-of date.
 
-**Cardiology NPs and PAs** — CMS Doctors and Clinicians National Downloadable File.
+**CMS Doctors and Clinicians National Downloadable File**: cardiology NPs and PAs,
+endocrinologists, and a second count of cardiologists.
 https://data.cms.gov/provider-data
 
 The download URL changes each release, so `fetch_clinicians.py` queries the CMS
-metastore for the current one. The file is large (~800 MB).
+metastore for the current one. The file is large (~800 MB). `process_clinicians.py`
+reads it in full for the NP/PA affiliation rules; `sens_workforce_endocrinology.py`
+pre-filters it with grep to the rows that mention either specialty and caches the
+extract, which `validate_workforce_source.py` reuses. Clinicians are placed in a county
+by practice ZIP code through the Census ZCTA-to-county relationship file, which
+`fetch_clinicians.py` also downloads.
 
-**Urban–rural classification** — NCHS scheme for counties, plus 2020 Census table P2 for
-tract-level urban population.
+**Urban-rural classification**: 2023 NCHS scheme for counties, plus 2020 Census table P2
+for tract-level urban population. Used by Table 1, the urban-rural analyses and the
+care-access analysis.
 https://www.cdc.gov/nchs/data-analysis-tools/urban-rural.html
 https://api.census.gov/data/2020/dec/dhc
 
@@ -93,7 +102,7 @@ CDC blocks automated download of the NCHS file, so `fetch_urban_rural.py` prints
 instructions and reads a manually saved copy if the request fails. The 2020 Census
 endpoint requires a Census API key.
 
-**County boundaries** — a GeoJSON of US counties keyed by 5-digit FIPS, saved to the
+**County boundaries**: a GeoJSON of US counties keyed by 5-digit FIPS, saved to the
 repository root as `geojson-counties-fips.json`. It is not distributed here. The widely
 mirrored copy works:
 https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json
@@ -104,7 +113,8 @@ code, so `geo.py` re-keys 46113 to 46102 (Oglala Lakota), 02270 to 02158 (Kusilv
 51515 to 51019 (Bedford). The dashboards apply the same aliases in
 `prepare_fips_patches.py`.
 
-**Tract boundaries** — Census Bureau cartographic boundary files, 2020, 500k scale. The
-figure scripts pull each state layer from a GitHub mirror on first use and cache it under
-`tract_geo/`.
+**Tract boundaries**: Census Bureau cartographic boundary files, 2020, 500k scale. The
+figure scripts pull each state layer from a GitHub mirror on first use and cache it
+under `tract_geo/`. `make_figure3.py` also reads the ALAND field of these files for the
+land-area shares quoted in the Figure 3 legend.
 https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html

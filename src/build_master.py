@@ -11,6 +11,11 @@ Also defines the logic reused throughout:
   matrix_boxes()   the 2x2 classification, applied to any readiness measure
   rank_eligible()  drops single-measure-burden states from ranked lists
   compare_runs()   box agreement, retention and top-N overlap versus a baseline
+  fisher_ci()      confidence interval for a Pearson correlation
+  spearman()       rank correlation without a scipy dependency
+  markdown_table() plain-text table renderer for the summary logs
+  acs_population(), nchs_classes(), tract_urban_rural()
+                   small loaders for the files that the descriptive tables share
 
 Outputs (outputs/master/)
   tract_master.csv   one row per tract with burden, readiness, flags
@@ -19,6 +24,7 @@ Outputs (outputs/master/)
 Run this before anything else; downstream scripts refuse to start without the
 cache so results stay consistent.
 """
+import glob
 import os
 import numpy as np
 import pandas as pd
@@ -203,6 +209,107 @@ def tidy(df, extra=None):
         if out[c].dtype == float:
             out[c] = out[c].round(3)
     return out
+
+
+def markdown_table(df, floatfmt=".1f"):
+    """Render a frame as a padded markdown table, index first. No tabulate needed."""
+    d = df.copy()
+    for c in d.columns:
+        if d[c].dtype.kind == "f":
+            d[c] = d[c].map(lambda v: "" if pd.isna(v) else format(v, floatfmt))
+    head = [str(d.index.name or "")] + [str(c) for c in d.columns]
+    rows = [[str(i)] + [str(v) for v in r] for i, r in d.iterrows()]
+    w = [max(len(head[k]), *(len(r[k]) for r in rows)) if rows else len(head[k])
+         for k in range(len(head))]
+    line = lambda cells: "| " + " | ".join(c.ljust(w[k]) for k, c in enumerate(cells)) + " |"
+    rule = "|" + "|".join("-" * (w[k] + 2) for k in range(len(head))) + "|"
+    return "\n".join([line(head), rule] + [line(r) for r in rows])
+
+
+def spearman(x, y):
+    """Spearman correlation as the Pearson correlation of ranks (no scipy needed)."""
+    d = pd.concat([x, y], axis=1).dropna()
+    return float(d.iloc[:, 0].rank().corr(d.iloc[:, 1].rank()))
+
+
+def fisher_ci(r, n, level=0.95):
+    """Confidence interval for a Pearson correlation via the Fisher z transform.
+
+    Returns (lower, upper). The normal quantile is hard-coded for the common
+    levels so the module stays free of scipy.
+    """
+    zq = {0.90: 1.6449, 0.95: 1.9600, 0.99: 2.5758}[level]
+    z = np.arctanh(r)
+    se = 1.0 / np.sqrt(n - 3)
+    return float(np.tanh(z - zq * se)), float(np.tanh(z + zq * se))
+
+
+def corr_with_ci(x, y):
+    """Pearson r, its 95% CI and n for two aligned series, dropping missing pairs."""
+    d = pd.concat([x, y], axis=1).dropna()
+    r = float(d.iloc[:, 0].corr(d.iloc[:, 1]))
+    lo, hi = fisher_ci(r, len(d))
+    return {"r": round(r, 3), "ci_low": round(lo, 3), "ci_high": round(hi, 3),
+            "n": len(d)}
+
+
+# Three small files that the descriptive tables share. Each returns a frame
+# or series keyed on the tract or county FIPS, zero-padded.
+
+def acs_population():
+    """ACS 5-year total tract population, used as the resident weight throughout."""
+    f = sorted(glob.glob(os.path.join(PROJECT_DIR, "ACS",
+                                      "acs5_*_tract_ddi_components.csv")))
+    if not f:
+        raise SystemExit("ACS component file missing. Run fetch_acs_components.py.")
+    a = pd.read_csv(f[-1], dtype={"GEOID": str})
+    a["GEOID"] = a["GEOID"].str.zfill(11)
+    return a.set_index("GEOID")["age_65plus_denom"].astype(float)
+
+
+def acs_components():
+    """Tract shares behind the Divide Index (internet, computer, poverty, ...)."""
+    f = sorted(glob.glob(os.path.join(PROJECT_DIR, "ACS",
+                                      "acs5_*_tract_ddi_components.csv")))
+    a = pd.read_csv(f[-1], dtype={"GEOID": str})
+    a["GEOID"] = a["GEOID"].str.zfill(11)
+    return a
+
+
+def fcc_availability():
+    """Tract broadband availability from the FCC Broadband Data Collection."""
+    f = sorted(glob.glob(os.path.join(PROJECT_DIR, "FCC",
+                                      "fcc_*_tract_availability.csv")))
+    if not f:
+        raise SystemExit("FCC availability file missing. Run fetch_broadband.py "
+                         "and aggregate_broadband.py.")
+    x = pd.read_csv(f[-1], dtype={"GEOID": str})
+    x["GEOID"] = x["GEOID"].str.zfill(11)
+    return x
+
+
+NCHS_ORDER = ["Large central metro", "Large fringe metro", "Medium metro",
+              "Small metro", "Micropolitan", "Noncore (rural)"]
+
+
+def nchs_classes():
+    """2023 NCHS urban-rural class per county (fips_st_cnty, nchs_code, nchs_label)."""
+    f = os.path.join(PROJECT_DIR, "GEO", "nchs_urban_rural_county.csv")
+    if not os.path.exists(f):
+        raise SystemExit("NCHS county file missing. Run fetch_urban_rural.py.")
+    n = pd.read_csv(f, dtype={"fips_st_cnty": str})
+    n["fips_st_cnty"] = n["fips_st_cnty"].str.zfill(5)
+    return n[["fips_st_cnty", "nchs_code", "nchs_label"]]
+
+
+def tract_urban_rural():
+    """2020 Census urban share per tract (GEOID, pct_urban, urban_flag, pop_total_2020)."""
+    f = os.path.join(PROJECT_DIR, "GEO", "census2020_tract_urban_rural.csv")
+    if not os.path.exists(f):
+        raise SystemExit("tract urban-rural file missing. Run fetch_urban_rural.py.")
+    t = pd.read_csv(f, dtype={"GEOID": str})
+    t["GEOID"] = t["GEOID"].str.zfill(11)
+    return t[["GEOID", "pct_urban", "urban_flag", "pop_total_2020"]]
 
 
 def main():

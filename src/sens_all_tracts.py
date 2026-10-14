@@ -1,7 +1,7 @@
 """
 sens_all_tracts.py
 ==========================
-Additional analysis C1: drop the workforce filter. Apply the same 2x2 matrix
+Sensitivity: drop the workforce screen. Apply the same 2x2 matrix
 (burden_z > 0; DDI <= national median) to ALL US tracts, not just tracts in
 counties with no or declining per-capita cardiology workforce.
 
